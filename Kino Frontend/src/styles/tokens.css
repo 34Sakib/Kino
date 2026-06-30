@@ -1,0 +1,37 @@
+:root {
+  /* Colors */
+  --bg-dark: #0D0D0D;
+  --text-light: #FFFFFF;
+  --bg-light: #F5F0EA;
+  --accent-gold: #E8B86D;
+  --accent-gold-hover: #D7A65B;
+  --surface-dark: #1E1E1E;
+  --surface-light: #FFFFFF;
+  --text-dark: #1E1E1E;
+  --text-muted: #6B6B6B;
+  --border-light: rgba(0, 0, 0, 0.08);
+  --border-dark: rgba(255, 255, 255, 0.1);
+  --overlay-bg: rgba(0, 0, 0, 0.4);
+
+  /* Fonts */
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'Nunito Sans', sans-serif;
+  --font-price: 'Space Grotesk', sans-serif;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.08);
+  --shadow-luxury: 0 20px 40px rgba(13, 13, 13, 0.06);
+
+  /* Transitions */
+  --transition-smooth: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  --transition-fast: all 0.2s ease;
+  --transition-bounce: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  /* Border Radii */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+}
