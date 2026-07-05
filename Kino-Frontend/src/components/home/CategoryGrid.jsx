@@ -1,15 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { categories } from '../../data/categories';
+import api from '../../utils/api';
 import { ArrowUpRight } from 'lucide-react';
 
 export const CategoryGrid = () => {
-  // Let's grab 5 categories to place in the bento layout
-  const bentoCats = categories.slice(0, 5);
+  const [bentoCats, setBentoCats] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Layout classes for bento cell mappings
-  // Row 1: two cells (span 3 each)
-  // Row 2: three cells (span 2 each)
+  useEffect(() => {
+    let active = true;
+    api.get('/categories')
+      .then(res => {
+        if (active) {
+          setBentoCats(api.mapCategories(res).slice(0, 5));
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
   const gridClasses = [
     'col-span-3 h-[320px]',
     'col-span-3 h-[320px]',
@@ -17,6 +30,16 @@ export const CategoryGrid = () => {
     'col-span-2 h-[260px]',
     'col-span-2 h-[260px]',
   ];
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-bg-light">
+        <div className="container text-center text-text-muted text-xs">
+          Loading curator categories...
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 bg-bg-light">
@@ -84,7 +107,6 @@ export const CategoryGrid = () => {
 
       </div>
 
-      {/* Scope responsive styles because flex-bento is key */}
       <style>{`
         @media (max-width: 991px) {
           .bento-grid > a {

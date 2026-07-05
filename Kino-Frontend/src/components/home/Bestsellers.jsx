@@ -1,13 +1,30 @@
-import React, { useRef } from 'react';
-import { products } from '../../data/products';
+import React, { useRef, useState, useEffect } from 'react';
+import api from '../../utils/api';
 import { ProductCard } from '../product/ProductCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { SkeletonGrid } from '../shared/Loader';
 
 export const Bestsellers = () => {
   const scrollRef = useRef(null);
+  const [bestsellers, setBestsellers] = useState([]);
+  const [loading, setLoading] = useState(true);
   
-  // Choose bestseller products
-  const bestsellers = products.slice(0, 5);
+  useEffect(() => {
+    let active = true;
+    api.get('/products?limit=5')
+      .then(res => {
+        if (active) {
+          const mapped = api.mapProducts(res);
+          setBestsellers(mapped);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   const scroll = (direction) => {
     if (scrollRef.current) {
@@ -58,25 +75,29 @@ export const Bestsellers = () => {
         </div>
 
         {/* Scroll Container */}
-        <div
-          ref={scrollRef}
-          className="bestsellers-scroll flex gap-6 overflow-x-auto pb-6 scrollbar-hide snap-x snap-mandatory"
-          style={{
-            scrollSnapType: 'x mandatory',
-            WebkitOverflowScrolling: 'touch',
-            msOverflowStyle: 'none',
-            scrollbarWidth: 'none'
-          }}
-        >
-          {bestsellers.map((product) => (
-            <div
-              key={product.id}
-              className="w-[280px] sm:w-[320px] flex-shrink-0 snap-start"
-            >
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <SkeletonGrid limit={3} />
+        ) : (
+          <div
+            ref={scrollRef}
+            className="bestsellers-scroll flex gap-6 overflow-x-auto pb-6 scrollbar-hide snap-x snap-mandatory"
+            style={{
+              scrollSnapType: 'x mandatory',
+              WebkitOverflowScrolling: 'touch',
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none'
+            }}
+          >
+            {bestsellers.map((product) => (
+              <div
+                key={product.id}
+                className="w-[280px] sm:w-[320px] flex-shrink-0 snap-start"
+              >
+                <ProductCard product={product} />
+              </div>
+            ))}
+          </div>
+        )}
 
       </div>
 

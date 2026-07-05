@@ -1,13 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { products } from '../../data/products';
+import api from '../../utils/api';
 import { ProductGrid } from '../product/ProductGrid';
 import { Button } from '../shared/Button';
+import { SkeletonGrid } from '../shared/Loader';
 
 export const FeaturedProducts = () => {
   const navigate = useNavigate();
-  // Filter products that are not sold out or just grab the first 4 for display
-  const featuredItems = products.slice(0, 4);
+  const [featuredItems, setFeaturedItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    api.get('/products?limit=4')
+      .then(res => {
+        if (active) {
+          const mapped = api.mapProducts(res);
+          setFeaturedItems(mapped);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   return (
     <section id="featured-collection" className="py-20 bg-white border-b border-black/5">
@@ -26,7 +44,11 @@ export const FeaturedProducts = () => {
 
         {/* 4-col product grid */}
         <div className="w-full">
-          <ProductGrid products={featuredItems} columns={4} />
+          {loading ? (
+            <SkeletonGrid limit={4} columns={4} />
+          ) : (
+            <ProductGrid products={featuredItems} columns={4} />
+          )}
         </div>
 
         {/* View All Collection CTA */}

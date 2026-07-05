@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { products } from '../data/products';
-import { categories } from '../data/categories';
+import api from '../utils/api';
 import { ProductGrid } from '../components/product/ProductGrid';
 import { StarRating } from '../components/shared/StarRating';
+import { SkeletonGrid } from '../components/shared/Loader';
 import { SlidersHorizontal, X } from 'lucide-react';
 
 export const Shop = () => {
@@ -13,14 +13,43 @@ export const Shop = () => {
   
   const searchNameQuery = searchParams.get('search') || '';
 
+  // API State
+  const [dbProducts, setDbProducts] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   // Filter States
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [priceRange, setPriceRange] = useState(1200); // Max product price is $1100
+  const [priceRange, setPriceRange] = useState(1200); 
   const [selectedColors, setSelectedColors] = useState([]);
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [minRating, setMinRating] = useState(0);
   const [sortBy, setSortBy] = useState('default');
   const [visibleCount, setVisibleCount] = useState(6);
+
+  // Fetch categories and products on mount/params change
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+
+    Promise.all([
+      api.get('/categories'),
+      api.get('/products?limit=100')
+    ])
+      .then(([cats, prods]) => {
+        if (active) {
+          setDbCategories(cats);
+          setDbProducts(api.mapProducts(prods));
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        if (active) setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, []);
 
   // Sync category state with route slug
   useEffect(() => {
@@ -36,13 +65,13 @@ export const Shop = () => {
     setVisibleCount(6);
   }, [selectedCategory, priceRange, selectedColors, selectedSizes, minRating, sortBy, searchNameQuery]);
 
-  // Extract all unique colors and sizes from mock product lists for filter options
+  // Extract all unique colors and sizes from fetched product lists
   const allColors = Array.from(
-    new Set(products.flatMap((p) => p.colors || []).map((c) => JSON.stringify(c)))
+    new Set(dbProducts.flatMap((p) => p.colors || []).map((c) => JSON.stringify(c)))
   ).map((str) => JSON.parse(str));
 
   const allSizes = Array.from(
-    new Set(products.flatMap((p) => p.sizes || []))
+    new Set(dbProducts.flatMap((p) => p.sizes || []))
   );
 
   // Toggle handlers for multi-selects
@@ -72,7 +101,7 @@ export const Shop = () => {
   };
 
   // Filtering Logic
-  const filteredProducts = products.filter((product) => {
+  const filteredProducts = dbProducts.filter((product) => {
     // 1. Category Filter
     if (selectedCategory !== 'all' && product.category !== selectedCategory) {
       return false;
@@ -81,7 +110,7 @@ export const Shop = () => {
     if (
       searchNameQuery &&
       !product.name.toLowerCase().includes(searchNameQuery.toLowerCase()) &&
-      !product.tagline.toLowerCase().includes(searchNameQuery.toLowerCase())
+      !(product.tagline || '').toLowerCase().includes(searchNameQuery.toLowerCase())
     ) {
       return false;
     }
@@ -93,14 +122,14 @@ export const Shop = () => {
     if (product.rating < minRating) {
       return false;
     }
-    // 5. Colors Filter (match any selected color)
+    // 5. Colors Filter
     if (selectedColors.length > 0) {
       const hasMatchingColor = product.colors?.some((color) =>
         selectedColors.includes(color.name)
       );
       if (!hasMatchingColor) return false;
     }
-    // 6. Sizes Filter (match any selected size)
+    // 6. Sizes Filter
     if (selectedSizes.length > 0) {
       const hasMatchingSize = product.sizes?.some((size) =>
         selectedSizes.includes(size)
@@ -121,10 +150,9 @@ export const Shop = () => {
     if (sortBy === 'rating') {
       return b.rating - a.rating;
     }
-    return 0; // default (Curator's Choice)
+    return 0; // Curator's Choice
   });
 
-  // Paginated list
   const paginatedProducts = sortedProducts.slice(0, visibleCount);
 
   return (
@@ -138,7 +166,7 @@ export const Shop = () => {
           </span>
           <h1 className="font-editorial text-4xl md:text-5xl font-medium">
             {categorySlug 
-              ? categories.find(c => c.slug === categorySlug)?.name || 'Category'
+              ? dbCategories.find(c => c.slug === categorySlug)?.name || 'Category'
               : 'Browse All Pieces'
             }
           </h1>
@@ -168,7 +196,7 @@ export const Shop = () => {
               )}
             </div>
 
-            {/* Category Filter List (when browsing all) */}
+            {/* Category Filter List */}
             {!categorySlug && (
               <div className="flex flex-col gap-2.5">
                 <h4 className="text-xs uppercase tracking-wider font-semibold text-text-dark">Sanctuary Type</h4>
@@ -180,18 +208,18 @@ export const Shop = () => {
                         selectedCategory === 'all' ? 'text-accent-gold font-bold' : 'text-text-muted'
                       }`}
                     >
-                      All Collections ({products.length})
+                      All Collections ({dbProducts.length})
                     </button>
                   </li>
-                  {categories.map((cat) => {
-                    const count = products.filter((p) => p.category === cat.id).length;
+                  {dbCategories.map((cat) => {
+                    const count = dbProducts.filter((p) => p.category === cat.slug).length;
                     return (
                       <li key={cat.id}>
                         <button
                           onClick={() => setSelectedCategory(cat.slug)}
                           className={`text-left w-full hover:text-accent-gold transition-colors ${
                             selectedCategory === cat.slug ? 'text-accent-gold font-bold' : 'text-text-muted'
-                          }`}
+                      }`}
                         >
                           {cat.name} ({count})
                         </button>
@@ -202,7 +230,7 @@ export const Shop = () => {
               </div>
             )}
 
-            {/* Price Filter (Range Slider) */}
+            {/* Price Filter */}
             <div className="flex flex-col gap-2.5 border-t border-black/5 pt-4">
               <div className="flex justify-between text-xs uppercase tracking-wider font-semibold">
                 <span className="text-text-dark">Max Price</span>
@@ -349,10 +377,14 @@ export const Shop = () => {
 
             {/* Product Card Grid */}
             <div className="mt-2">
-              <ProductGrid products={paginatedProducts} columns={3} />
+              {loading ? (
+                <SkeletonGrid columns={3} limit={6} />
+              ) : (
+                <ProductGrid products={paginatedProducts} columns={3} />
+              )}
             </div>
 
-            {/* Simulated Load More Pagination */}
+            {/* Load More Pagination */}
             {sortedProducts.length > visibleCount && (
               <div className="flex justify-center mt-10">
                 <button

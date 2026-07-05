@@ -5,6 +5,7 @@ import { useUserStore } from '../store/userStore';
 import { ShippingForm } from '../components/checkout/ShippingForm';
 import { PaymentForm } from '../components/checkout/PaymentForm';
 import { OrderSummary } from '../components/checkout/OrderSummary';
+import api from '../utils/api';
 import { ShieldCheck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -20,20 +21,21 @@ export const CheckoutPage = () => {
 
   const subtotal = getSubtotal();
 
-  // Route state check for details passed from bag
   const initialPricing = location.state?.pricing || {
     subtotal: subtotal,
-    shipping: subtotal >= 50 ? 0 : 9.99,
+    shipping: subtotal >= 500 ? 0 : 25.00,
     discount: 0,
-    total: subtotal + (subtotal >= 50 ? 0 : 9.99),
+    total: subtotal + (subtotal >= 500 ? 0 : 25.00),
     code: ''
   };
 
   const [step, setStep] = useState(1); // Step 1: Shipping, Step 2: Payment
   const [shippingDetails, setShippingDetails] = useState(null);
   const [pricing, setPricing] = useState(initialPricing);
+  const [sessionData, setSessionData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
-  // Safety redirect if cart is completely empty
+  // Safety redirect if cart is empty
   useEffect(() => {
     if (cartItems.length === 0) {
       toast.error('Your shopping bag is empty.');
@@ -43,45 +45,79 @@ export const CheckoutPage = () => {
 
   // Handle shipping step submission
   const handleShippingSubmit = (details) => {
-    setShippingDetails(details);
+    setLoading(true);
     
-    // Recalculate shipping costs based on selected method
-    const shippingCost = details.shippingMethod === 'express' 
-      ? 15.00 
-      : (subtotal >= 50 ? 0 : 9.99);
-
-    const discountAmount = subtotal * (pricing.code ? 0.1 : 0);
-    const updatedTotal = subtotal - discountAmount + shippingCost;
-
-    setPricing((prev) => ({
-      ...prev,
-      shipping: shippingCost,
-      total: updatedTotal
-    }));
-
-    setStep(2); // Proceed to payment step
-    window.scrollTo(0, 0);
+    // Call backend checkout session trigger
+    api.post('/checkout/session', {
+      items: cartItems.map(item => ({
+        id: item.id,
+        qty: item.qty,
+        sku: item.sku || `${item.category.toUpperCase()}-VESSEL-SM`, // default fallback SKU if missing
+        name: item.name
+      })),
+      email: details.email || 'guest@example.com',
+      shipping_address: {
+        first_name: details.firstName,
+        last_name: details.lastName,
+        address_line1: details.address,
+        city: details.city,
+        zip: details.zip,
+        country: details.country || 'US'
+      },
+      coupon_code: pricing.code || null
+    })
+      .then(res => {
+        setSessionData(res);
+        setShippingDetails(details);
+        setPricing(prev => ({
+          ...prev,
+          total: parseFloat(res.total)
+        }));
+        setStep(2); // Proceed to payment
+        setLoading(false);
+        window.scrollTo(0, 0);
+      })
+      .catch(err => {
+        toast.error(err.message || 'Inventory validation failed.');
+        setLoading(false);
+      });
   };
 
   // Handle payment completion
   const handlePaymentSuccess = (paymentDetails) => {
-    const placedOrder = {
-      items: cartItems,
-      shipping: shippingDetails,
-      pricing: pricing,
-      payment: paymentDetails
-    };
+    if (!sessionData) return;
 
-    // Save order history details to store
-    const completedOrder = addOrder(placedOrder);
+    setLoading(true);
     
-    // Clear items in basket
-    clearCart();
+    // Confirm order payment in backend
+    api.post('/checkout/confirm', {
+      order_id: sessionData.order_id,
+      payment_intent_id: sessionData.payment_intent_id
+    })
+      .then(res => {
+        const placedOrder = {
+          items: cartItems,
+          shipping: shippingDetails,
+          pricing: pricing,
+          payment: paymentDetails,
+          order_number: sessionData.order_number,
+          id: sessionData.order_id
+        };
 
-    toast.success('Thank you! Your order was authorized.');
-    
-    // Redirect to Order Success Page
-    navigate('/order-success', { state: { order: completedOrder } });
+        // Add to local state orders list
+        const completedOrder = addOrder(placedOrder);
+        
+        clearCart();
+        toast.success('Thank you! Your order was authorized.');
+        setLoading(false);
+        
+        // Redirect to Order Success Page
+        navigate('/order-success', { state: { order: completedOrder } });
+      })
+      .catch(err => {
+        toast.error(err.message || 'Payment confirmation failed.');
+        setLoading(false);
+      });
   };
 
   return (
@@ -120,9 +156,13 @@ export const CheckoutPage = () => {
         {/* Main Grid Checkout content */}
         <div className="flex flex-col lg:flex-row gap-10">
           
-          {/* Left Column: Form Forms */}
+          {/* Left Column */}
           <div className="w-full lg:w-2/3 border border-solid border-black/5 rounded-sm p-6 bg-white shadow-xs">
-            {step === 1 ? (
+            {loading ? (
+              <div className="py-20 text-center text-text-muted text-xs">
+                Authorizing secure transaction...
+              </div>
+            ) : step === 1 ? (
               <ShippingForm onSubmit={handleShippingSubmit} />
             ) : (
               <PaymentForm
@@ -133,7 +173,7 @@ export const CheckoutPage = () => {
             )}
           </div>
 
-          {/* Right Column: Order Summary (Sticky) */}
+          {/* Right Column: Order Summary */}
           <div className="w-full lg:w-1/3">
             <OrderSummary pricingInfo={pricing} />
           </div>

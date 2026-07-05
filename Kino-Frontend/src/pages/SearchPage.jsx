@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { products } from '../data/products';
+import api from '../utils/api';
 import { ProductGrid } from '../components/product/ProductGrid';
 import { Search as SearchIcon, Trash2, ArrowRight } from 'lucide-react';
 
@@ -12,6 +12,8 @@ export const SearchPage = () => {
   
   const [searchInput, setSearchInput] = useState(queryParam);
   const [history, setHistory] = useState([]);
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   // Sync inputs with URL queries
   useEffect(() => {
@@ -25,6 +27,26 @@ export const SearchPage = () => {
       setHistory(JSON.parse(saved));
     }
   }, []);
+
+  // Fetch search results from API when query changes
+  useEffect(() => {
+    if (!queryParam.trim()) {
+      setResults([]);
+      return;
+    }
+    
+    setLoading(true);
+    api.get(`/products?q=${encodeURIComponent(queryParam)}&limit=100`)
+      .then(res => {
+        const mapped = api.mapProducts(res);
+        setResults(mapped || []);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Failed to fetch search results:', err);
+        setLoading(false);
+      });
+  }, [queryParam]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -50,14 +72,6 @@ export const SearchPage = () => {
     setHistory([]);
     localStorage.removeItem('kino-search-history');
   };
-
-  // Filter products
-  const results = products.filter(
-    (p) =>
-      p.name.toLowerCase().includes(queryParam.toLowerCase()) ||
-      p.tagline.toLowerCase().includes(queryParam.toLowerCase()) ||
-      p.category.toLowerCase().includes(queryParam.toLowerCase())
-  );
 
   return (
     <div className="pt-28 pb-20 bg-white min-h-screen select-none animate-fade-in">
@@ -92,7 +106,11 @@ export const SearchPage = () => {
               </span>
             </div>
 
-            {results.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-20 text-text-muted text-xs">
+                Searching our boutique sanctuary...
+              </div>
+            ) : results.length === 0 ? (
               /* No Results State */
               <div className="text-center py-16 flex flex-col items-center gap-4 max-w-md mx-auto">
                 <p className="font-editorial text-2xl italic text-text-muted leading-relaxed">

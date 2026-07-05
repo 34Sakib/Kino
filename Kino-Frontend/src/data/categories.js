@@ -27,7 +27,7 @@ export const categories = [
     id: 'dining',
     name: 'Dining & Kitchen',
     slug: 'dining',
-    image: 'https://images.unsplash.com/photo-1556912172-3bb406ef7e77?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
     description: 'Handcrafted ceramic plates, marble dining tables, and fine glassware.',
     featured: false
   },

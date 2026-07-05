@@ -1,11 +1,30 @@
-import React from 'react';
-import { products } from '../data/products';
+import React, { useState, useEffect } from 'react';
+import api from '../utils/api';
 import { ProductGrid } from '../components/product/ProductGrid';
 import { Tag } from 'lucide-react';
 
 export const SalePage = () => {
-  // Filter products carrying sale badge or original price
-  const saleProducts = products.filter((p) => p.originalPrice !== null || p.badge === 'Sale');
+  const [saleProducts, setSaleProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch and filter sale products dynamically
+  useEffect(() => {
+    let active = true;
+    api.get('/products?limit=100')
+      .then(res => {
+        if (active) {
+          const mapped = api.mapProducts(res);
+          const filtered = mapped.filter((p) => p.originalPrice !== null || p.badge === 'Sale');
+          setSaleProducts(filtered);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch sale products:', err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   return (
     <div className="pt-28 pb-20 bg-white min-h-screen select-none animate-fade-in">
@@ -41,7 +60,13 @@ export const SalePage = () => {
           <span className="text-xs text-text-muted font-price-label">({saleProducts.length} pieces on sale)</span>
         </div>
 
-        <ProductGrid products={saleProducts} columns={3} />
+        {loading ? (
+          <div className="text-center py-20 text-text-muted text-xs">
+            Loading our curated clearance sanctuary...
+          </div>
+        ) : (
+          <ProductGrid products={saleProducts} columns={3} />
+        )}
 
       </div>
     </div>

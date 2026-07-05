@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { products } from '../data/products';
+import api from '../utils/api';
 import { useCartStore } from '../store/cartStore';
 import { useWishlistStore } from '../store/wishlistStore';
 import { ImageGallery } from '../components/product/ImageGallery';
@@ -17,29 +17,15 @@ export const ProductPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Find matching product
-  const product = products.find((p) => p.id === id);
+  // API States
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [bundleProduct, setBundleProduct] = useState(null);
 
   // States
   const [selectedColor, setSelectedColor] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
-  const [recentlyViewed, setRecentlyViewed] = useState([]);
-
-  useEffect(() => {
-    if (product) {
-      const saved = localStorage.getItem('kino-recently-viewed') || '[]';
-      let historyList = JSON.parse(saved);
-      historyList = [product.id, ...historyList.filter((item) => item !== product.id)].slice(0, 5);
-      localStorage.setItem('kino-recently-viewed', JSON.stringify(historyList));
-    }
-  }, [product]);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('kino-recently-viewed') || '[]';
-    const ids = JSON.parse(saved).filter((item) => item !== id);
-    const itemsList = products.filter((p) => ids.includes(p.id));
-    setRecentlyViewed(itemsList);
-  }, [id]);
   const [qty, setQty] = useState(1);
   const [activeTab, setActiveTab] = useState('details');
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
@@ -53,48 +39,62 @@ export const ProductPage = () => {
   // Refs for sticky scroll mapping
   const addToCartRef = useRef(null);
 
-  // Set default variants when product loads
+  // Fetch product from API
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api.get(`/products/${id}`)
+      .then(res => {
+        if (active) {
+          const mapped = api.mapProduct(res.product);
+          setProduct(mapped);
+          
+          if (mapped.colors && mapped.colors.length > 0) {
+            setSelectedColor(mapped.colors[0]);
+          }
+          if (mapped.sizes && mapped.sizes.length > 0) {
+            setSelectedSize(mapped.sizes[0]);
+          }
+          setQty(1);
+          setLoading(false);
+          window.scrollTo(0, 0);
+
+          // Fetch related product for bundle
+          api.get(`/products/${mapped.id}/related`)
+            .then(relRes => {
+              if (active && relRes.length > 0) {
+                setBundleProduct(api.mapProduct(relRes[0]));
+              }
+            });
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        if (active) setLoading(false);
+      });
+
+    return () => { active = false; };
+  }, [id]);
+
+  // Sync Recently Viewed history carousel
   useEffect(() => {
     if (product) {
-      if (product.colors && product.colors.length > 0) {
-        setSelectedColor(product.colors[0]);
-      }
-      if (product.sizes && product.sizes.length > 0) {
-        setSelectedSize(product.sizes[0]);
-      }
-      setQty(1);
-      window.scrollTo(0, 0);
+      const saved = localStorage.getItem('kino-recently-viewed') || '[]';
+      let historyList = JSON.parse(saved);
+      historyList = [product.id, ...historyList.filter((item) => item !== product.id)].slice(0, 5);
+      localStorage.setItem('kino-recently-viewed', JSON.stringify(historyList));
+
+      api.get('/products?limit=5')
+        .then(res => {
+          const mapped = api.mapProducts(res);
+          setRecentlyViewed(mapped.filter(p => p.id !== product.id).slice(0, 3));
+        });
     }
-  }, [product]);
-
-  // Scroll listener for sticky bar
-  useEffect(() => {
-    const handleScroll = () => {
-      if (addToCartRef.current) {
-        const rect = addToCartRef.current.getBoundingClientRect();
-        // Show sticky bar once original Add to Cart button leaves viewport top
-        setShowStickyBar(rect.bottom < 0);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  if (!product) {
-    return (
-      <div className="pt-32 pb-20 text-center container">
-        <h2 className="font-editorial text-3xl font-bold">Piece Not Found</h2>
-        <p className="text-text-muted mt-2">The requested design could not be found in our database.</p>
-        <button onClick={() => navigate('/shop')} className="btn-gold mt-6">
-          Return to Gallery
-        </button>
-      </div>
-    );
-  }
+  }, [id, product]);
 
   // Stepper handlers
   const handleQtyChange = (val) => {
-    if (val > 0 && val <= product.stock) {
+    if (product && val > 0 && val <= product.stock) {
       setQty(val);
     }
   };
@@ -126,10 +126,6 @@ export const ProductPage = () => {
     }
   };
 
-  const bundleProduct = products.find((p) => p.id !== id && p.category !== product.category) || products.find((p) => p.id !== id);
-  const baseSum = product.price + (bundleProduct?.price || 0);
-  const bundleSum = baseSum * 0.9;
-
   const handleClaimBundle = () => {
     if (isSoldOut || (bundleProduct && bundleProduct.stock === 0)) {
       toast.error('One or more bundle items are sold out.');
@@ -142,6 +138,28 @@ export const ProductPage = () => {
     toast.success('Bespoke bundle set added to bag with 10% discount.');
   };
 
+  if (loading) {
+    return (
+      <div className="pt-32 pb-20 text-center container text-text-muted text-xs">
+        Loading curator details...
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="pt-32 pb-20 text-center container">
+        <h2 className="font-editorial text-3xl font-bold">Piece Not Found</h2>
+        <p className="text-text-muted mt-2">The requested design could not be found in our database.</p>
+        <button onClick={() => navigate('/shop')} className="btn-gold mt-6">
+          Return to Gallery
+        </button>
+      </div>
+    );
+  }
+
+  const baseSum = product.price + (bundleProduct?.price || 0);
+  const bundleSum = baseSum * 0.9;
   const isSoldOut = product.stock === 0;
 
   return (

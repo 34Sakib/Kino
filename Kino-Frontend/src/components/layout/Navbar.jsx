@@ -4,8 +4,7 @@ import { Search, ShoppingBag, User, Heart, ChevronDown, LogOut, X, ArrowRight } 
 import { useCartStore } from '../../store/cartStore';
 import { useWishlistStore } from '../../store/wishlistStore';
 import { useUserStore } from '../../store/userStore';
-import { products } from '../../data/products';
-import { categories } from '../../data/categories';
+import api from '../../utils/api';
 
 export const Navbar = () => {
   const navigate = useNavigate();
@@ -19,6 +18,8 @@ export const Navbar = () => {
   const { user, login, logout } = useUserStore();
 
   // Local State
+  const [categories, setCategories] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -31,6 +32,27 @@ export const Navbar = () => {
   // Refs
   const searchRef = useRef(null);
   const accountRef = useRef(null);
+
+  // Fetch categories and products dynamically on mount
+  useEffect(() => {
+    let active = true;
+    api.get('/categories')
+      .then(res => {
+        if (active) setCategories(api.mapCategories(res));
+      })
+      .catch(err => console.error('Navbar category load failed:', err));
+
+    api.get('/products?limit=100')
+      .then(res => {
+        if (active) {
+          const mapped = api.mapProducts(res);
+          setAllProducts(mapped || []);
+        }
+      })
+      .catch(err => console.error('Navbar products load failed:', err));
+
+    return () => { active = false; };
+  }, []);
 
   // Count animations
   const cartCount = getCartCount();
@@ -69,20 +91,20 @@ export const Navbar = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Search input live filtering
+  // Search input live filtering against API products
   useEffect(() => {
     if (searchQuery.trim() === '') {
       setSearchSuggestions([]);
       return;
     }
-    const filtered = products.filter(
+    const filtered = allProducts.filter(
       (product) =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.category.toLowerCase().includes(searchQuery.toLowerCase())
     ).slice(0, 5); // Max 5 suggestions
     setSearchSuggestions(filtered);
-  }, [searchQuery]);
+  }, [searchQuery, allProducts]);
 
   // Execute Search
   const handleSearchSubmit = (e) => {

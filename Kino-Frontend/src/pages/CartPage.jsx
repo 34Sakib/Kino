@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
 import { CartItem } from '../components/cart/CartItem';
 import { CartSummary } from '../components/cart/CartSummary';
 import { ProductCard } from '../components/product/ProductCard';
-import { products } from '../data/products';
+import api from '../utils/api';
 import { ShoppingBag } from 'lucide-react';
 
 export const CartPage = () => {
@@ -15,15 +15,32 @@ export const CartPage = () => {
   const getCount = useCartStore((state) => state.getCount);
   const count = getCount();
 
+  const [upsellItems, setUpsellItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch upsell items dynamically from the API
+  useEffect(() => {
+    let active = true;
+    api.get('/products?limit=12')
+      .then(res => {
+        if (active) {
+          const mapped = api.mapProducts(res);
+          const filtered = mapped.filter((p) => !items.some((item) => item.id === p.id) && p.stock > 0).slice(0, 3);
+          setUpsellItems(filtered);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch upsell items:', err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [items]);
+
   // Redirect to checkout carrying selected discounts/totals
   const handleCheckout = (pricingInfo) => {
     navigate('/checkout', { state: { pricing: pricingInfo } });
   };
-
-  // Upsell logic: pick 3 items that are NOT currently in the cart
-  const upsellItems = products
-    .filter((p) => !items.some((item) => item.id === p.id) && p.stock > 0)
-    .slice(0, 3);
 
   return (
     <div className="pt-28 pb-20 bg-white min-h-screen select-none">
@@ -78,8 +95,11 @@ export const CartPage = () => {
           </div>
         )}
 
-        {/* Upsell / Carousel suggestion section */}
-        {upsellItems.length > 0 && (
+        {loading ? (
+          <div className="border-t border-black/5 pt-16 mt-20 text-center text-text-muted text-xs">
+            Curating suggestions for your concept...
+          </div>
+        ) : upsellItems.length > 0 && (
           <div className="border-t border-black/5 pt-16 mt-20">
             <div className="text-center mb-10 flex flex-col items-center gap-1.5">
               <span className="text-[0.65rem] uppercase tracking-[0.25em] font-bold text-accent-gold font-price-label">
