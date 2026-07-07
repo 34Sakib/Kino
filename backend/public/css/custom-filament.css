@@ -1,0 +1,252 @@
+/* Custom styles for luxury KINO admin dashboard and login page */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+
+/* Apply font to the entire panel */
+body, button, input, select, textarea, span, div, a, p, h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif !important;
+}
+
+/* --- Premium Login Page Skin (Kept dark glassmorphic for entrance) --- */
+.fi-simple-layout {
+    background-image: linear-gradient(rgba(13, 13, 13, 0.75), rgba(13, 13, 13, 0.85)), url('/images/login-bg.png') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 100vh !important;
+}
+
+/* Glassmorphic Simple Card container */
+.fi-simple-card {
+    background: rgba(30, 30, 30, 0.75) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(232, 184, 109, 0.25) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5) !important;
+    padding: 2.5rem !important;
+    max-width: 440px !important;
+    width: 100% !important;
+    transition: all 0.3s ease !important;
+}
+
+.fi-simple-card:hover {
+    border-color: rgba(232, 184, 109, 0.4) !important;
+    box-shadow: 0 25px 60px rgba(232, 184, 109, 0.1) !important;
+}
+
+/* Input Fields inside Login Page */
+.fi-simple-card input[type="email"],
+.fi-simple-card input[type="password"] {
+    background-color: rgba(13, 13, 13, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #F5F0EA !important;
+    border-radius: 8px !important;
+    padding: 0.75rem 1rem !important;
+    transition: all 0.3s ease !important;
+}
+
+.fi-simple-card input[type="email"]:focus,
+.fi-simple-card input[type="password"]:focus {
+    border-color: #E8B86D !important;
+    box-shadow: 0 0 0 2px rgba(232, 184, 109, 0.2) !important;
+    background-color: rgba(13, 13, 13, 0.9) !important;
+}
+
+/* Simple page headings and text */
+.fi-simple-header-title {
+    font-family: 'Playfair Display', serif !important;
+    color: #F5F0EA !important;
+    font-size: 1.85rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.02em !important;
+}
+
+.fi-simple-header-heading {
+    font-family: 'Playfair Display', serif !important;
+    color: #F5F0EA !important;
+    letter-spacing: -0.02em !important;
+}
+
+/* Login submit button */
+.fi-simple-card button[type="submit"] {
+    background: linear-gradient(135deg, #E8B86D, #D09F53) !important;
+    color: #0D0D0D !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em !important;
+    text-transform: uppercase !important;
+    border-radius: 8px !important;
+    border: none !important;
+    padding: 0.75rem !important;
+    box-shadow: 0 4px 15px rgba(232, 184, 109, 0.2) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.fi-simple-card button[type="submit"]:hover {
+    background: linear-gradient(135deg, #f5d194, #e8b86d) !important;
+    box-shadow: 0 6px 20px rgba(232, 184, 109, 0.4) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Links inside login */
+.fi-simple-card a {
+    color: #E8B86D !important;
+    transition: color 0.2s ease !important;
+}
+
+.fi-simple-card a:hover {
+    color: #f5d194 !important;
+    text-decoration: underline !important;
+}
+
+/* --- Panel Layout Styling --- */
+
+/* 1. LIGHT MODE (Default - Soft Cream) */
+/* Sidebar styling */
+.fi-sidebar {
+    background-color: #F4F0EA !important;
+    border-right: 1px solid #E4DDD3 !important;
+}
+
+.fi-sidebar-header {
+    border-bottom: 1px solid #E4DDD3 !important;
+}
+
+/* Sidebar navigation links */
+.fi-sidebar-item-active a {
+    background-color: rgba(232, 184, 109, 0.15) !important;
+    border-left: 3px solid #E8B86D !important;
+    border-radius: 0 6px 6px 0 !important;
+    color: #8A6D3B !important;
+}
+
+.fi-sidebar-item a:hover {
+    background-color: rgba(142, 130, 115, 0.05) !important;
+}
+
+/* Topbar / Header */
+.fi-topbar {
+    background-color: #FAF8F5 !important;
+    border-bottom: 1px solid #E4DDD3 !important;
+}
+
+/* Main Background */
+.fi-main {
+    background-color: #FAF8F5 !important;
+}
+
+/* Cards & Widgets */
+.fi-wi, .fi-ta-ctn, .fi-card, .fi-wi-stats-overview-stat {
+    background-color: #FFFFFF !important;
+    border: 1px solid #E4DDD3 !important;
+    box-shadow: 0 8px 30px rgba(142, 130, 115, 0.06) !important;
+    border-radius: 12px !important;
+}
+
+/* Table header luxury accents */
+thead th {
+    background-color: #F4F0EA !important;
+    border-bottom: 1px solid #E4DDD3 !important;
+    color: #6B665F !important;
+    text-transform: uppercase !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.05em !important;
+}
+
+/* Custom stats widget values styling */
+.fi-wi-stats-overview-stat-val {
+    color: #8A6D3B !important;
+    font-weight: 700 !important;
+}
+
+/* Form inputs general dashboard */
+.fi-fo-ctn input, .fi-fo-ctn select, .fi-fo-ctn textarea {
+    background-color: #FFFFFF !important;
+    border-color: #E4DDD3 !important;
+    color: #2D2A26 !important;
+}
+
+.fi-fo-ctn input:focus, .fi-fo-ctn select:focus {
+    border-color: #E8B86D !important;
+    box-shadow: 0 0 0 2px rgba(232, 184, 109, 0.2) !important;
+}
+
+/* Scrollbars styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #FAF8F5;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(232, 184, 109, 0.3);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(232, 184, 109, 0.5);
+}
+
+
+/* 2. DARK MODE (Slate Gray) */
+.dark .fi-sidebar {
+    background-color: #1A1A1E !important;
+    border-right: 1px solid rgba(232, 184, 109, 0.08) !important;
+}
+
+.dark .fi-sidebar-header {
+    border-bottom: 1px solid rgba(232, 184, 109, 0.08) !important;
+}
+
+.dark .fi-sidebar-item-active a {
+    background-color: rgba(232, 184, 109, 0.1) !important;
+    border-left: 3px solid #E8B86D !important;
+    color: #E8B86D !important;
+}
+
+.dark .fi-sidebar-item a:hover {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+.dark .fi-topbar {
+    background-color: #1A1A1E !important;
+    border-bottom: 1px solid rgba(232, 184, 109, 0.08) !important;
+}
+
+.dark .fi-main {
+    background-color: #121214 !important;
+}
+
+.dark .fi-wi, .dark .fi-ta-ctn, .dark .fi-wi-stats-overview-stat, .dark .fi-card {
+    background-color: #1E1E24 !important;
+    border: 1px solid rgba(255, 255, 255, 0.03) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important;
+}
+
+.dark thead th {
+    background-color: #121214 !important;
+    border-bottom: 1px solid rgba(232, 184, 109, 0.1) !important;
+    color: #A4A4A4 !important;
+}
+
+.dark .fi-wi-stats-overview-stat-val {
+    color: #E8B86D !important;
+}
+
+.dark .fi-fo-ctn input, .dark .fi-fo-ctn select, .dark .fi-fo-ctn textarea {
+    background-color: #121214 !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+    color: #FAF8F5 !important;
+}
+
+.dark ::-webkit-scrollbar-track {
+    background: #121214;
+}
