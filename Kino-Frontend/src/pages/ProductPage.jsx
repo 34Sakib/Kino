@@ -215,15 +215,11 @@ export const ProductPage = () => {
               <span className="text-3xl font-bold text-accent-gold font-price-label">
                 ${product.price}
               </span>
-              {isSoldOut ? (
+              {isSoldOut && (
                 <span className="text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-sm uppercase tracking-wide font-bold ml-3 font-price-label">
                   Sold Out
                 </span>
-              ) : product.stock <= 3 ? (
-                <span className="text-xs bg-orange-100 text-orange-700 px-2.5 py-1 rounded-sm uppercase tracking-wide font-bold ml-3 font-price-label animate-pulse">
-                  Only {product.stock} Left!
-                </span>
-              ) : null}
+              )}
             </div>
 
             <p className="text-sm text-text-muted leading-relaxed">

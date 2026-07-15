@@ -10,7 +10,7 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::query()->with('category', 'images');
+        $query = Product::query()->with(['category', 'images', 'variants.inventory']);
 
         // Filter by category slug
         if ($request->has('category')) {
@@ -93,7 +93,7 @@ class ProductController extends Controller
 
         $related = Product::where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
-            ->with('images', 'category')
+            ->with(['images', 'category', 'variants.inventory'])
             ->limit(4)
             ->get();
 
@@ -101,7 +101,7 @@ class ProductController extends Controller
         if ($related->count() < 4) {
             $additional = Product::where('id', '!=', $product->id)
                 ->whereNotIn('id', $related->pluck('id'))
-                ->with('images', 'category')
+                ->with(['images', 'category', 'variants.inventory'])
                 ->limit(4 - $related->count())
                 ->get();
             $related = $related->merge($additional);

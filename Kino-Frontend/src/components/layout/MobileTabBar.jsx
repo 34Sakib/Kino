@@ -61,7 +61,7 @@ export const MobileTabBar = () => {
       >
         <ShoppingBag size={20} />
         {cartCount > 0 && (
-          <span className="absolute top-0 right-1 bg-accent-gold text-bg-dark text-[0.55rem] font-bold w-4 h-4 rounded-full flex items-center justify-center font-price-label">
+          <span className="absolute top-0 right-1 bg-[var(--accent-gold)] text-[var(--bg-dark)] text-[0.55rem] font-bold w-4 h-4 rounded-full flex items-center justify-center font-price-label">
             {cartCount}
           </span>
         )}

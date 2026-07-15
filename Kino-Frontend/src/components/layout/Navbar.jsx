@@ -28,6 +28,7 @@ export const Navbar = () => {
   const [loginName, setLoginName] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
   const [badgePop, setBadgePop] = useState(false);
+  const isNavbarDarkBg = !isScrolled && location.pathname === '/';
 
   // Refs
   const searchRef = useRef(null);
@@ -145,7 +146,7 @@ export const Navbar = () => {
         
         {/* Left Side: Navigation Links / Mega Menu trigger */}
         <nav className="hidden lg:flex items-center gap-8">
-          <Link to="/" className="text-sm font-semibold tracking-wider uppercase hover:text-accent-gold transition-colors">
+          <Link to="/" className={`text-sm font-semibold tracking-wider uppercase transition-colors ${isNavbarDarkBg ? 'text-white hover:text-accent-gold' : 'text-text-dark hover:text-accent-gold'}`}>
             Home
           </Link>
           
@@ -153,7 +154,7 @@ export const Navbar = () => {
           <div className="relative group py-2">
             <Link
               to="/shop"
-              className="text-sm font-semibold tracking-wider uppercase hover:text-accent-gold transition-colors flex items-center gap-1"
+              className={`text-sm font-semibold tracking-wider uppercase transition-colors flex items-center gap-1 ${isNavbarDarkBg ? 'text-white hover:text-accent-gold' : 'text-text-dark hover:text-accent-gold'}`}
             >
               Shop <ChevronDown size={14} />
             </Link>
@@ -206,17 +207,17 @@ export const Navbar = () => {
             </div>
           </div>
 
-          <Link to="/about" className="text-sm font-semibold tracking-wider uppercase hover:text-accent-gold transition-colors">
+          <Link to="/about" className={`text-sm font-semibold tracking-wider uppercase transition-colors ${isNavbarDarkBg ? 'text-white hover:text-accent-gold' : 'text-text-dark hover:text-accent-gold'}`}>
             Our Story
           </Link>
-          <Link to="/contact" className="text-sm font-semibold tracking-wider uppercase hover:text-accent-gold transition-colors">
+          <Link to="/contact" className={`text-sm font-semibold tracking-wider uppercase transition-colors ${isNavbarDarkBg ? 'text-white hover:text-accent-gold' : 'text-text-dark hover:text-accent-gold'}`}>
             Contact
           </Link>
         </nav>
 
         {/* Center: Brand Logo */}
         <Link to="/" className="flex flex-col items-center">
-          <span className="font-editorial text-2xl md:text-3xl font-semibold tracking-[0.2em] uppercase text-text-dark">
+          <span className={`font-editorial text-2xl md:text-3xl font-semibold tracking-[0.2em] uppercase transition-colors duration-500 ${isNavbarDarkBg ? 'text-white' : 'text-text-dark'}`}>
             Kino
           </span>
           <span className="text-[0.6rem] tracking-[0.4em] uppercase text-accent-gold mt-[-3px] font-price-label font-bold">
@@ -236,11 +237,15 @@ export const Navbar = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
-                className="w-36 md:w-52 pr-8 pl-4 py-1.5 text-sm rounded-full bg-black/5 border border-transparent focus:bg-white focus:w-48 md:focus:w-72 transition-all duration-300"
+                className={`w-36 md:w-52 pr-8 pl-4 py-1.5 text-sm rounded-full border border-transparent transition-all duration-300 focus:bg-white focus:text-[var(--text-dark)] focus:placeholder-text-muted ${
+                  isNavbarDarkBg
+                    ? 'bg-white/10 text-white placeholder-white/50 focus:w-48 md:focus:w-72'
+                    : 'bg-black/5 text-[var(--text-dark)] placeholder-text-muted/60 focus:w-48 md:focus:w-72'
+                }`}
               />
               <button
                 type="submit"
-                className="absolute right-3 text-text-dark/70 hover:text-accent-gold"
+                className={`absolute right-3 transition-colors ${isNavbarDarkBg ? 'text-white/75 hover:text-accent-gold' : 'text-text-dark/70 hover:text-accent-gold'}`}
               >
                 <Search size={16} />
               </button>
@@ -287,12 +292,18 @@ export const Navbar = () => {
           {/* Wishlist Shortcut */}
           <Link
             to="/wishlist"
-            className="text-text-dark hover:text-accent-gold transition-colors relative hidden md:block"
+            className={`transition-colors relative hidden md:block ${isNavbarDarkBg ? 'text-white hover:text-accent-gold' : 'text-text-dark hover:text-accent-gold'}`}
             title="Saved Items"
           >
             <Heart size={20} />
             {wishlistItems.length > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-black text-white text-[0.6rem] font-bold w-4 h-4 rounded-full flex items-center justify-center font-price-label">
+              <span
+                className={`absolute -top-1.5 -right-1.5 text-[0.65rem] font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center font-price-label border border-solid shadow-sm shadow-black/10 transition-transform duration-300 ${
+                  isNavbarDarkBg 
+                    ? 'bg-white text-[var(--bg-dark)] border-[#0D0D0D]' 
+                    : 'bg-[var(--text-dark)] text-white border-white'
+                }`}
+              >
                 {wishlistItems.length}
               </span>
             )}
@@ -302,7 +313,7 @@ export const Navbar = () => {
           <div ref={accountRef} className="relative">
             <button
               onClick={() => setIsAccountOpen(!isAccountOpen)}
-              className="text-text-dark hover:text-accent-gold transition-colors flex items-center gap-0.5"
+              className={`transition-colors flex items-center gap-0.5 ${isNavbarDarkBg ? 'text-white hover:text-accent-gold' : 'text-text-dark hover:text-accent-gold'}`}
             >
               <User size={20} />
             </button>
@@ -390,15 +401,17 @@ export const Navbar = () => {
           {/* Cart Bag Icon with badge animate popup */}
           <button
             onClick={openCart}
-            className="text-text-dark hover:text-accent-gold transition-colors relative flex items-center"
+            className={`transition-all duration-300 relative flex items-center hover:scale-105 active:scale-95 ${
+              isNavbarDarkBg ? 'text-white hover:text-accent-gold' : 'text-text-dark hover:text-accent-gold'
+            }`}
             title="Cart"
           >
             <ShoppingBag size={20} />
             {cartCount > 0 && (
               <span
-                className={`absolute -top-1.5 -right-1.5 bg-accent-gold text-bg-dark text-[0.6rem] font-bold w-4 h-4 rounded-full flex items-center justify-center font-price-label border border-solid border-white ${
-                  badgePop ? 'animate-badge-pop' : ''
-                }`}
+                className={`absolute -top-1.5 -right-1.5 bg-[var(--accent-gold)] text-[var(--bg-dark)] text-[0.65rem] font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center font-price-label border border-solid shadow-sm shadow-black/10 transition-transform duration-300 ${
+                  isNavbarDarkBg ? 'border-[#0D0D0D]' : 'border-white'
+                } ${badgePop ? 'animate-badge-pop' : ''}`}
               >
                 {cartCount}
               </span>

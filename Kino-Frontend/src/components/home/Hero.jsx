@@ -19,13 +19,16 @@ export const Hero = () => {
       className="relative w-full min-h-screen bg-[#0D0D0D] flex items-center justify-center overflow-hidden py-24 select-none"
     >
       {/* Background Image overlay with premium gradient */}
-      <div className="absolute inset-0 z-0">
-        <img
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <motion.img
+          initial={{ scale: 1.06, opacity: 0 }}
+          animate={{ scale: 1, opacity: 0.5 }}
+          transition={{ duration: 3, ease: 'easeOut' }}
           src="https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&w=1600&q=80"
           alt="Luxury living space design background"
-          className="w-full h-full object-cover opacity-35 scale-102 filter brightness-[0.7] contrast-[1.05]"
+          className="w-full h-full object-cover filter brightness-[0.8] contrast-[1.05]"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
       </div>
 
       {/* Content */}
@@ -90,7 +93,7 @@ export const Hero = () => {
           </Button>
           <button
             onClick={() => navigate('/about')}
-            className="w-full sm:w-auto btn-outline border-white text-white hover:bg-white hover:text-black font-bold tracking-widest px-8"
+            className="w-full sm:w-auto btn-outline-white font-bold tracking-widest px-8"
           >
             Explore Collection
           </button>

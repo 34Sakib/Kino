@@ -59,6 +59,38 @@ class ProductForm
                     ])
                     ->columns(2)
                     ->columnSpanFull(),
+                Repeater::make('variants')
+                    ->relationship('variants')
+                    ->schema([
+                        TextInput::make('sku')
+                            ->required(),
+                        TextInput::make('price_modifier')
+                            ->numeric()
+                            ->default(0.00)
+                            ->prefix('$'),
+                        Select::make('attribute_values_json')
+                            ->label('Attributes')
+                            ->multiple()
+                            ->options(\App\Models\AttributeValue::with('attribute')->get()->mapWithKeys(function ($item) {
+                                return [$item->id => "{$item->attribute->name}: {$item->value}"];
+                            }))
+                            ->preload(),
+                        TextInput::make('stock')
+                            ->label('Stock / Quantity')
+                            ->numeric()
+                            ->default(0)
+                            ->afterStateHydrated(function (TextInput $component, $record) {
+                                if ($record && $record->inventory) {
+                                    $component->state($record->inventory->stock);
+                                }
+                            })
+                            ->saveRelationshipsUsing(function ($state, $record) {
+                                $record->inventory()->updateOrCreate([], ['stock' => $state]);
+                            })
+                            ->required(),
+                    ])
+                    ->columns(4)
+                    ->columnSpanFull(),
             ]);
     }
 }
