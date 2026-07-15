@@ -1,4 +1,9 @@
-<img width="1920" height="9672" alt="image" src="https://github.com/user-attachments/assets/2ffb4ca0-1d00-49f4-9799-38c8b9d6d476" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/adae535a-ff44-48f8-9437-0508658b0d51"
+       alt="Preview"
+       width="850" />
+</p>
+
 
 # Kino Atelier — Sculptural Home Sanctuary & Decor
 
