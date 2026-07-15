@@ -1,3 +1,5 @@
+<img width="1920" height="9672" alt="image" src="https://github.com/user-attachments/assets/2ffb4ca0-1d00-49f4-9799-38c8b9d6d476" />
+
 # Kino Atelier — Sculptural Home Sanctuary & Decor
 
 An online e-commerce atelier dedicated to curated interior pieces, handcrafted from single-source raw travertine, white oak, and fluted earthenware.
