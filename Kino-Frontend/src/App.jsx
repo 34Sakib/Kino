@@ -2,6 +2,10 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useUserStore } from './store/userStore';
+import { useCartStore } from './store/cartStore';
+import { useWishlistStore } from './store/wishlistStore';
+import { useSettingsStore } from './store/settingsStore';
 
 // Layout Components
 import { AnnouncementBar } from './components/layout/AnnouncementBar';
@@ -65,6 +69,17 @@ const AnimatedPage = ({ children }) => {
 
 const AppContent = () => {
   const location = useLocation();
+  const checkAuth = useUserStore((state) => state.checkAuth);
+  const loadCart = useCartStore((state) => state.loadCartFromServer);
+  const loadWishlist = useWishlistStore((state) => state.loadWishlistFromServer);
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
+
+  useEffect(() => {
+    checkAuth();
+    loadCart();
+    loadWishlist();
+    fetchSettings();
+  }, [checkAuth, loadCart, loadWishlist, fetchSettings]);
 
   return (
     <div className="flex flex-col min-h-screen relative">

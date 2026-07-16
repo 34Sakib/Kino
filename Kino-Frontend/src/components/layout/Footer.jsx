@@ -1,8 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
+import { useSettingsStore } from '../../store/settingsStore';
+import api from '../../utils/api';
 
 export const Footer = () => {
+  const settings = useSettingsStore((state) => state.settings);
+
   const handleScrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -16,13 +20,23 @@ export const Footer = () => {
           
           {/* Column 1: Brand Info */}
           <div className="flex flex-col gap-4">
-            <Link to="/" className="flex flex-col">
-              <span className="font-editorial text-2xl font-semibold tracking-[0.2em] uppercase text-white">
-                Kino
-              </span>
-              <span className="text-[0.6rem] tracking-[0.4em] uppercase text-accent-gold mt-[-3px] font-price-label font-bold">
-                Atelier
-              </span>
+            <Link to="/" className="flex flex-col self-start">
+              {settings?.logo ? (
+                <img
+                  src={api.resolveImageUrl(settings.logo)}
+                  alt={settings.company_name || "Kino Atelier"}
+                  className="h-10 w-auto object-contain"
+                />
+              ) : (
+                <>
+                  <span className="font-editorial text-2xl font-semibold tracking-[0.2em] uppercase text-white">
+                    {settings?.company_name || 'Kino'}
+                  </span>
+                  <span className="text-[0.6rem] tracking-[0.4em] uppercase text-accent-gold mt-[-3px] font-price-label font-bold">
+                    Atelier
+                  </span>
+                </>
+              )}
             </Link>
             <p className="text-xs text-white/50 max-w-sm mt-2">
               Curating elevated sensory items for modern architectural interiors. Handcrafted, organic materials and sculptural minimalism.

@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { testimonials } from '../data/testimonials';
+import React, { useState, useEffect } from 'react';
+import { testimonials as staticTestimonials } from '../data/testimonials';
 import { StarRating } from '../components/shared/StarRating';
 import { Button } from '../components/shared/Button';
 import { toast } from 'react-hot-toast';
-import { CheckCircle, Award } from 'lucide-react';
+import { CheckCircle, Award, Lock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useUserStore } from '../store/userStore';
+import api from '../utils/api';
 
 const PRESS_REVIEWS = [
   { publisher: 'Architectural Digest', quote: 'Kino Atelier has defined the new standard of silent structural forms inside residential interior aesthetics.', rating: 5 },
@@ -12,48 +15,73 @@ const PRESS_REVIEWS = [
 ];
 
 export const ReviewsPage = () => {
-  const [reviewsList, setReviewsList] = useState([
-    { id: 101, name: 'Valerie H.', rating: 5, date: 'June 26, 2026', comment: 'The travertine vessel is incredibly heavy and beautiful. Natural imperfections make it completely unique. Fast shipping to London.' },
-    { id: 102, name: 'Adrian T.', rating: 5, date: 'June 22, 2026', comment: 'Nordic Oak Writing Desk drawers are smooth and felt-lined. Joinery details are flawless. Completely changes my office mood.' },
-    { id: 103, name: 'Clara M.', rating: 4, date: 'June 18, 2026', comment: 'Linen sheets are cool and drape beautifully. They crease naturally as expected. Packaging came inside a premium organic cotton sack.' }
-  ]);
-
-  const [newName, setNewName] = useState('');
+  const { user } = useUserStore();
+  const [reviewsList, setReviewsList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [newRating, setNewRating] = useState(5);
   const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    api.get('/reviews')
+      .then(res => {
+        if (active) {
+          // If database has reviews, use them. Otherwise, fall back to some mock items
+          setReviewsList(res.length > 0 ? res : []);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load global reviews:", err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   const handleSubmitReview = (e) => {
     e.preventDefault();
-    if (!newName.trim() || !newComment.trim()) {
-      toast.error('Please complete your review details.');
+    if (!newComment.trim()) {
+      toast.error('Please write a review comment.');
       return;
     }
 
-    const addedReview = {
-      id: Date.now(),
-      name: newName,
-      rating: newRating,
-      date: new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      }),
-      comment: newComment
-    };
+    setIsSubmitting(true);
 
-    setReviewsList([addedReview, ...reviewsList]);
-    setNewName('');
-    setNewRating(5);
-    setNewComment('');
-    toast.success('Your review has been published.');
+    // Map global review to default product id = 1 (Travertine Vessel flagship)
+    api.post('/products/1/reviews', {
+      rating: newRating,
+      body: newComment.trim()
+    })
+      .then(res => {
+        const added = {
+          id: res.review.id,
+          name: user.name,
+          rating: res.review.rating,
+          content: res.review.comment,
+          date: res.review.date,
+          verified: res.review.verified
+        };
+        setReviewsList(prev => [added, ...prev]);
+        setNewComment('');
+        setNewRating(5);
+        setIsSubmitting(false);
+        toast.success('Your review has been published.');
+      })
+      .catch(err => {
+        toast.error(err.message || 'Failed to submit review.');
+        setIsSubmitting(false);
+      });
   };
 
+  // Combine DB reviews with fallback testimonials for totals
+  const allReviews = [...reviewsList, ...staticTestimonials];
+
   const aggregateRating = (
-    (reviewsList.reduce((sum, r) => sum + r.rating, 0) + testimonials.reduce((sum, t) => sum + t.rating, 0)) /
-    (reviewsList.length + testimonials.length)
+    allReviews.reduce((sum, r) => sum + r.rating, 0) / allReviews.length
   ).toFixed(1);
 
-  const totalCount = reviewsList.length + testimonials.length;
+  const totalCount = allReviews.length;
 
   return (
     <div className="pt-28 pb-20 bg-white min-h-screen select-none animate-fade-in">
@@ -124,52 +152,57 @@ export const ReviewsPage = () => {
           
           {/* Write review Form */}
           <div className="lg:col-span-1">
-            <form onSubmit={handleSubmitReview} className="flex flex-col gap-4 sticky top-24 bg-bg-light/30 border border-solid border-black/5 p-6 rounded-sm">
-              <h3 className="font-editorial text-xl font-bold uppercase tracking-wider">Leave a Review</h3>
-              
-              <div className="flex flex-col gap-1.5 mt-2">
-                <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Rating</label>
-                <StarRating
-                  rating={newRating}
-                  size={18}
-                  interactive={true}
-                  onChange={(val) => setNewRating(val)}
-                />
-              </div>
+            {user ? (
+              <form onSubmit={handleSubmitReview} className="flex flex-col gap-4 sticky top-24 bg-bg-light/30 border border-solid border-black/5 p-6 rounded-sm animate-fade-in">
+                <h3 className="font-editorial text-xl font-bold uppercase tracking-wider">Leave a Review</h3>
+                <p className="text-[0.65rem] text-text-muted uppercase tracking-wider">
+                  Posting as: <span className="font-bold text-text-dark">{user.name}</span>
+                </p>
+                
+                <div className="flex flex-col gap-1.5 mt-2">
+                  <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Rating</label>
+                  <StarRating
+                    rating={newRating}
+                    size={18}
+                    interactive={true}
+                    onChange={(val) => setNewRating(val)}
+                  />
+                </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Your Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. John Doe"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  className="py-2 px-3 text-xs rounded-sm"
-                />
-              </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Comment</label>
+                  <textarea
+                    required
+                    rows="4"
+                    placeholder="Describe your tactile experience..."
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    className="py-2 px-3 text-xs rounded-sm resize-none"
+                  />
+                </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Comment</label>
-                <textarea
-                  required
-                  rows="4"
-                  placeholder="Describe your tactile experience..."
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="py-2 px-3 text-xs rounded-sm resize-none"
-                />
+                <Button
+                  type="submit"
+                  variant="gold"
+                  fullWidth
+                  disabled={isSubmitting}
+                  className="py-2 text-xs font-bold uppercase mt-1"
+                >
+                  {isSubmitting ? 'Publishing...' : 'Publish Review'}
+                </Button>
+              </form>
+            ) : (
+              <div className="flex flex-col gap-4 sticky top-24 bg-bg-light/30 border border-solid border-black/5 p-6 rounded-sm text-center items-center py-8 animate-fade-in">
+                <Lock className="text-accent-gold" size={24} />
+                <h3 className="font-editorial text-xl font-bold uppercase tracking-wider">Leave a Review</h3>
+                <p className="text-xs text-text-muted mt-1 leading-normal">
+                  Only verified clients with a registered profile can submit lookbook impressions.
+                </p>
+                <Link to="/account" className="btn-gold justify-center py-2.5 font-bold tracking-widest text-xs uppercase w-full mt-2">
+                  Sign In
+                </Link>
               </div>
-
-              <Button
-                type="submit"
-                variant="gold"
-                fullWidth
-                className="py-2 text-xs font-bold uppercase mt-1"
-              >
-                Publish Review
-              </Button>
-            </form>
+            )}
           </div>
 
           {/* Reviews logs list */}
@@ -178,29 +211,33 @@ export const ReviewsPage = () => {
               Buyer logs ({totalCount})
             </h3>
             
-            <div className="flex flex-col gap-6">
-              {reviewsList.map((rev) => (
-                <div key={rev.id} className="border-b border-solid border-black/5 pb-5 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-text-dark">{rev.name}</span>
-                    <span className="text-text-muted font-price-label">{rev.date}</span>
+            {loading ? (
+              <div className="text-xs text-text-muted">Loading logs...</div>
+            ) : (
+              <div className="flex flex-col gap-6">
+                {reviewsList.map((rev) => (
+                  <div key={rev.id} className="border-b border-solid border-black/5 pb-5 flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-text-dark">{rev.name}</span>
+                      <span className="text-text-muted font-price-label">{rev.date}</span>
+                    </div>
+                    <StarRating rating={rev.rating} size={10} />
+                    <p className="text-xs text-text-muted leading-relaxed">{rev.content || rev.comment}</p>
                   </div>
-                  <StarRating rating={rev.rating} size={10} />
-                  <p className="text-xs text-text-muted leading-relaxed">{rev.comment}</p>
-                </div>
-              ))}
+                ))}
 
-              {testimonials.map((t) => (
-                <div key={t.id} className="border-b border-solid border-black/5 pb-5 flex flex-col gap-2.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-text-dark">{t.name}</span>
-                    <span className="text-text-muted font-price-label">verified</span>
+                {staticTestimonials.map((t) => (
+                  <div key={t.id} className="border-b border-solid border-black/5 pb-5 flex flex-col gap-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-text-dark">{t.name}</span>
+                      <span className="text-text-muted font-price-label">verified</span>
+                    </div>
+                    <StarRating rating={t.rating} size={10} />
+                    <p className="text-xs text-text-muted leading-relaxed">{t.content}</p>
                   </div>
-                  <StarRating rating={t.rating} size={10} />
-                  <p className="text-xs text-text-muted leading-relaxed">{t.content}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
           </div>
 

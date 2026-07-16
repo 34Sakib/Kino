@@ -4,67 +4,66 @@ import { Button } from '../components/shared/Button';
 import { Package, Truck, CheckCircle2, ChevronRight, Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+import api from '../utils/api';
+
 // Create a helper mock fallback order for demonstration
 const MOCK_FALLBACK_ORDER = {
   id: 'ORD-888888',
-  date: 'June 28, 2026',
   status: 'In Transit',
+  carrier: 'Kino Premium Delivery',
+  tracking_number: 'TRK-992837492',
   milestones: [
-    { label: 'Confirmed', date: 'June 28, 10:30 AM', completed: true },
-    { label: 'Sanctuary Carving', date: 'June 28, 2:40 PM', completed: true },
-    { label: 'Dispatched', date: 'June 29, 9:15 AM', completed: true },
-    { label: 'In Transit', date: 'Est. July 2', completed: false }
-  ],
-  shipping: {
-    firstName: 'Julian',
-    lastName: 'Sterling',
-    address: '42 Atelier Street',
-    city: 'New York',
-    zip: '10001',
-    country: 'United States'
-  },
-  items: [
-    { name: 'Travertine Sculpture Vessel', qty: 1, price: 180 },
-    { name: 'Fluted Ceramic Pendant', qty: 2, price: 320 }
-  ],
-  pricing: { total: 820 }
+    { label: 'Authorized', date: 'June 28 at 10:30 AM (Kino Atelier Center)', detail: 'Payment validation and checkout log authorized.', completed: true },
+    { label: 'Processing', date: 'June 28 at 2:40 PM (Kino Atelier Center)', detail: 'Atelier team began carving the stone layers.', completed: true },
+    { label: 'Dispatched', date: 'June 29 at 9:15 AM (Kino Atelier Center)', detail: 'Transferred to global shipping carrier.', completed: true },
+    { label: 'In Transit', date: 'July 01 at 4:32 PM (In Transit)', detail: 'Package has departed Copenhagen terminal.', completed: true }
+  ]
 };
 
 export const TrackOrderPage = () => {
   const [orderQuery, setOrderQuery] = useState('');
+  const [emailQuery, setEmailQuery] = useState('');
   const [searchedOrder, setSearchedOrder] = useState(null);
-  const { orders } = useUserStore();
+  const [loading, setLoading] = useState(false);
 
   const handleTrackSubmit = (e) => {
     e.preventDefault();
     const cleanQuery = orderQuery.trim().toUpperCase();
+    const email = emailQuery.trim().toLowerCase();
 
-    if (!cleanQuery) return;
+    if (!cleanQuery || !email) return;
 
-    // Check store orders
-    const found = orders.find((o) => o.id === cleanQuery);
-
-    if (found) {
-      // Build dynamic milestones
-      const decorated = {
-        ...found,
-        status: 'Dispatched',
-        milestones: [
-          { label: 'Confirmed', date: found.date, completed: true },
-          { label: 'Processed', date: found.date, completed: true },
-          { label: 'Dispatched', date: 'In Transit', completed: true },
-          { label: 'Delivered', date: 'Pending Courier', completed: false }
-        ]
-      };
-      setSearchedOrder(decorated);
-      toast.success('Order status retrieved.');
-    } else if (cleanQuery === 'ORD-888888' || cleanQuery === 'DEMO') {
+    if (cleanQuery === 'ORD-888888' || cleanQuery === 'DEMO') {
       setSearchedOrder(MOCK_FALLBACK_ORDER);
       toast.success('Demo order status retrieved.');
-    } else {
-      toast.error('Order reference not recognized. Try typing ORD-888888 for a demo.');
-      setSearchedOrder(null);
+      return;
     }
+
+    setLoading(true);
+
+    api.get(`/orders/track/${cleanQuery}?email=${encodeURIComponent(email)}`)
+      .then(res => {
+        const decorated = {
+          id: res.order_number,
+          status: res.status,
+          carrier: res.carrier,
+          tracking_number: res.tracking_number,
+          milestones: res.history.map(h => ({
+            label: h.status,
+            date: `${h.date} at ${h.time} (${h.location})`,
+            detail: h.detail,
+            completed: true
+          }))
+        };
+        setSearchedOrder(decorated);
+        setLoading(false);
+        toast.success('Order tracking retrieved.');
+      })
+      .catch(err => {
+        toast.error(err.message || 'No order found matching those credentials.');
+        setSearchedOrder(null);
+        setLoading(false);
+      });
   };
 
   return (
@@ -85,20 +84,47 @@ export const TrackOrderPage = () => {
         {/* Query Input */}
         <form onSubmit={handleTrackSubmit} className="bg-bg-light/45 border border-solid border-black/5 rounded-sm p-6 flex flex-col gap-4 mb-10">
           <p className="text-xs text-text-muted leading-relaxed">
-            Enter your order reference code (found inside your receipt email, e.g., <span className="font-bold text-text-dark font-price-label">ORD-888888</span>) below to inspect shipping milestones.
+            Enter your order reference code and the billing email address to inspect real-time shipping milestones and dispatch status logs.
           </p>
 
-          <div className="flex gap-3">
-            <input
-              type="text"
-              required
-              placeholder="e.g. ORD-888888"
-              value={orderQuery}
-              onChange={(e) => setOrderQuery(e.target.value)}
-              className="py-2.5 px-4 text-sm uppercase tracking-wider rounded-sm flex-1 font-price-label"
-            />
-            <Button type="submit" variant="gold" className="px-6 font-bold uppercase tracking-wider text-xs">
-              <Search size={14} /> Search
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[0.65rem] uppercase tracking-wider font-bold text-text-muted">Order Code</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. ORD-2026-12345"
+                value={orderQuery}
+                onChange={(e) => setOrderQuery(e.target.value)}
+                className="py-2 px-3 text-xs uppercase tracking-wider rounded-sm font-price-label"
+              />
+            </div>
+            
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[0.65rem] uppercase tracking-wider font-bold text-text-muted">Billing Email</label>
+              <input
+                type="email"
+                required
+                placeholder="e.g. collector@example.com"
+                value={emailQuery}
+                onChange={(e) => setEmailQuery(e.target.value)}
+                className="py-2 px-3 text-xs rounded-sm"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end mt-2">
+            <Button 
+              type="submit" 
+              variant="gold" 
+              disabled={loading}
+              className="px-6 font-bold uppercase tracking-wider text-[0.65rem] h-9"
+            >
+              {loading ? 'Searching...' : (
+                <>
+                  <Search size={12} className="mr-1" /> Find Order
+                </>
+              )}
             </Button>
           </div>
         </form>
@@ -113,6 +139,12 @@ export const TrackOrderPage = () => {
                 <span className="text-[0.65rem] text-text-muted uppercase tracking-wider font-semibold">Reference code</span>
                 <h4 className="font-price-label text-base font-bold text-text-dark">{searchedOrder.id}</h4>
               </div>
+              {searchedOrder.tracking_number && (
+                <div>
+                  <span className="text-[0.65rem] text-text-muted uppercase tracking-wider font-semibold">Carrier / Tracking</span>
+                  <p className="text-[0.7rem] font-bold text-text-dark font-price-label mt-0.5">{searchedOrder.carrier} - {searchedOrder.tracking_number}</p>
+                </div>
+              )}
               <div className="text-right">
                 <span className="text-[0.65rem] text-text-muted uppercase tracking-wider font-semibold">Current State</span>
                 <p className="text-sm font-bold text-accent-gold uppercase tracking-widest mt-0.5">{searchedOrder.status}</p>

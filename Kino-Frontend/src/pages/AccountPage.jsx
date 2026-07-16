@@ -1,23 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUserStore } from '../store/userStore';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, ClipboardList, MapPin, LogOut, CheckCircle, Package } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import api from '../utils/api';
 
 export const AccountPage = () => {
   const navigate = useNavigate();
-  const { user, orders, shippingAddress, logout, login } = useUserStore();
-  const [activeTab, setActiveTab] = useState('orders');
+  const { user, orders, shippingAddress, logout, login, register, updateProfile, loading, error } = useUserStore();
+  const [activeTab, setActiveTab] = useState('profile');
 
-  // Login form state (if visitor lands here logged out)
-  const [emailInput, setEmailInput] = useState('');
+  // Form states
+  const [isRegister, setIsRegister] = useState(false);
   const [nameInput, setNameInput] = useState('');
+  const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
 
-  const handleLogin = (e) => {
+  // Profile Edit states
+  const [profileName, setProfileName] = useState(user?.name || '');
+  const [profilePhone, setProfilePhone] = useState(user?.profile?.phone || '');
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [avatarPreview, setAvatarPreview] = useState('');
+
+  const handleAuthSubmit = async (e) => {
     e.preventDefault();
-    if (emailInput.trim()) {
-      login(emailInput, nameInput.trim() || undefined);
-      toast.success(`Welcome back!`);
+    if (!emailInput.trim() || !passwordInput.trim()) {
+      toast.error('Email and Password are required.');
+      return;
+    }
+
+    try {
+      if (isRegister) {
+        await register(nameInput.trim() || null, emailInput.trim(), passwordInput.trim());
+        toast.success(`Welcome to Kino!`);
+      } else {
+        await login(emailInput.trim(), passwordInput.trim());
+        toast.success(`Welcome back!`);
+      }
+      // Reset form states
+      setNameInput('');
+      setEmailInput('');
+      setPasswordInput('');
+    } catch (err) {
+      toast.error(err.message || 'Authentication failed. Please try again.');
+    }
+  };
+
+  // Synchronize form values when user logs in/updates
+  useEffect(() => {
+    if (user) {
+      setProfileName(user.name || '');
+      setProfilePhone(user.profile?.phone || '');
+      setAvatarPreview(api.resolveImageUrl(user.profile?.avatar) || user.avatar || '');
+    }
+  }, [user]);
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    const formData = new FormData();
+    formData.append('name', profileName);
+    formData.append('phone', profilePhone);
+    if (avatarFile) {
+      formData.append('avatar', avatarFile);
+    }
+
+    try {
+      await updateProfile(formData);
+      toast.success('Profile updated successfully!');
+      setAvatarFile(null);
+    } catch (err) {
+      toast.error(err.message || 'Failed to update profile.');
     }
   };
 
@@ -30,34 +90,38 @@ export const AccountPage = () => {
   return (
     <div className="pt-28 pb-20 bg-white min-h-screen select-none">
       <div className="container">
-        
+
         {/* Not Logged In Portal */}
         {!user ? (
-          <div className="max-w-md mx-auto border border-solid border-black/5 rounded-sm p-8 bg-white shadow-md text-center flex flex-col gap-6">
+          <div className="max-w-md mx-auto border border-solid border-black/5 rounded-sm p-8 bg-white shadow-md text-center flex flex-col gap-6 animate-fade-in">
             <div className="w-12 h-12 rounded-full bg-accent-gold/10 text-accent-gold flex items-center justify-center mx-auto">
               <User size={20} />
             </div>
             <div>
-              <h2 className="font-editorial text-2xl font-bold">Atelier Dashboard</h2>
+              <h2 className="font-editorial text-2xl font-bold">Sign In / Register</h2>
               <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                Log in with your email address to review your bespoke order history, saved addresses, and shipping logs.
+                {isRegister
+                  ? 'Create a Kino account to track orders and save your shipping preferences.'
+                  : 'Log in with your credentials to review your bespoke order history, saved addresses, and shipping logs.'}
               </p>
             </div>
 
-            <form onSubmit={handleLogin} className="flex flex-col gap-4 text-left">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Full Name (optional)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Julian Sterling"
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
-                  className="py-2 px-3 text-sm rounded-sm"
-                />
-              </div>
+            <form onSubmit={handleAuthSubmit} className="flex flex-col gap-4 text-left">
+              {isRegister && (
+                <div className="flex flex-col gap-1.5 animate-fade-in">
+                  <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Your Name (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Your Name"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    className="py-2 px-3 text-sm rounded-sm"
+                  />
+                </div>
+              )}
 
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Email Address</label>
+                <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Your Email</label>
                 <input
                   type="email"
                   required
@@ -68,9 +132,41 @@ export const AccountPage = () => {
                 />
               </div>
 
-              <button type="submit" className="btn-gold justify-center py-2.5 font-bold tracking-widest text-xs uppercase mt-2">
-                Enter Atelier
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">Your Password</label>
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
+                  className="py-2 px-3 text-sm rounded-sm"
+                />
+              </div>
+
+              {error && (
+                <p className="text-xs text-red-500 font-semibold animate-pulse">{error}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn-gold justify-center py-2.5 font-bold tracking-widest text-xs uppercase mt-2"
+              >
+                {loading ? 'Authenticating...' : 'Authenticate'}
               </button>
+
+              <div className="text-center mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsRegister(!isRegister);
+                  }}
+                  className="text-xs text-accent-gold font-bold uppercase tracking-wider hover:underline"
+                >
+                  {isRegister ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
+                </button>
+              </div>
             </form>
           </div>
         ) : (
@@ -80,7 +176,7 @@ export const AccountPage = () => {
             <div className="flex flex-col md:flex-row items-center justify-between border-b border-black/5 pb-8 mb-10 gap-6">
               <div className="flex items-center gap-4">
                 <img
-                  src={user.avatar}
+                  src={api.resolveImageUrl(user.profile?.avatar) || user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80'}
                   alt={user.name}
                   className="w-14 h-14 rounded-full object-cover border border-solid border-black/5"
                 />
@@ -103,22 +199,27 @@ export const AccountPage = () => {
 
             {/* Dashboard grid panel */}
             <div className="flex flex-col lg:flex-row gap-10">
-              
+
               {/* Sidebar Tabs */}
               <aside className="w-full lg:w-1/4 flex lg:flex-col border-b lg:border-b-0 lg:border-r border-black/5 gap-2 pb-4 lg:pb-0 lg:pr-6">
                 <button
+                  onClick={() => setActiveTab('profile')}
+                  className={`flex items-center gap-3 py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors text-left ${activeTab === 'profile' ? 'bg-[#0D0D0D] text-white' : 'text-text-muted hover:bg-black/5'
+                    }`}
+                >
+                  <User size={16} /> My Profile
+                </button>
+                <button
                   onClick={() => setActiveTab('orders')}
-                  className={`flex items-center gap-3 py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors text-left ${
-                    activeTab === 'orders' ? 'bg-[#0D0D0D] text-white' : 'text-text-muted hover:bg-black/5'
-                  }`}
+                  className={`flex items-center gap-3 py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors text-left ${activeTab === 'orders' ? 'bg-[#0D0D0D] text-white' : 'text-text-muted hover:bg-black/5'
+                    }`}
                 >
                   <ClipboardList size={16} /> Order Logs ({orders.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('address')}
-                  className={`flex items-center gap-3 py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors text-left ${
-                    activeTab === 'address' ? 'bg-[#0D0D0D] text-white' : 'text-text-muted hover:bg-black/5'
-                  }`}
+                  className={`flex items-center gap-3 py-2.5 px-4 text-xs font-bold uppercase tracking-wider rounded-sm transition-colors text-left ${activeTab === 'address' ? 'bg-[#0D0D0D] text-white' : 'text-text-muted hover:bg-black/5'
+                    }`}
                 >
                   <MapPin size={16} /> Saved Address
                 </button>
@@ -126,12 +227,99 @@ export const AccountPage = () => {
 
               {/* Main Tab Content */}
               <main className="w-full lg:w-3/4">
-                
+
+                {/* 0. Profile Tab Content */}
+                {activeTab === 'profile' && (
+                  <div className="flex flex-col gap-6 animate-fade-in max-w-xl">
+                    <h3 className="font-editorial text-2xl font-bold uppercase tracking-wider border-b border-solid border-black/5 pb-2 mb-2">
+                      My Profile Settings
+                    </h3>
+                    <form onSubmit={handleProfileSubmit} className="flex flex-col gap-6">
+                      {/* Avatar Image Uploader */}
+                      <div className="flex items-center gap-6">
+                        <div className="relative group w-20 h-20 rounded-full overflow-hidden bg-black/5 border border-solid border-black/10 flex items-center justify-center">
+                          {avatarPreview ? (
+                            <img
+                              src={avatarPreview}
+                              alt="Profile avatar preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <User className="text-text-muted/30" size={32} />
+                          )}
+                        </div>
+                        <div>
+                          <label className="text-xs uppercase tracking-wider font-semibold text-text-muted block mb-1">
+                            Profile Picture
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarChange}
+                            className="text-xs text-text-muted file:mr-4 file:py-1.5 file:px-3 file:rounded-sm file:border-0 file:text-xs file:font-semibold file:bg-black/5 file:text-text-dark hover:file:bg-black/10 cursor-pointer"
+                          />
+                          <p className="text-[0.65rem] text-text-muted mt-1">JPEG, PNG or WEBP up to 2MB (optional)</p>
+                        </div>
+                      </div>
+
+                      {/* Name Input */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">
+                          Your Name (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. Your Name"
+                          value={profileName}
+                          onChange={(e) => setProfileName(e.target.value)}
+                          className="py-2 px-3 text-sm rounded-sm border border-solid border-black/10"
+                        />
+                      </div>
+
+                      {/* Telephone Input */}
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">
+                          Your Telephone (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 01712345678"
+                          value={profilePhone}
+                          onChange={(e) => setProfilePhone(e.target.value)}
+                          className="py-2 px-3 text-sm rounded-sm font-price-label border border-solid border-black/10"
+                        />
+                      </div>
+
+                      {/* Email Input (read only indicator) */}
+                      <div className="flex flex-col gap-1.5 opacity-60">
+                        <label className="text-xs uppercase tracking-wider font-semibold text-text-muted">
+                          Email Account (Immutable)
+                        </label>
+                        <input
+                          type="email"
+                          readOnly
+                          disabled
+                          value={user?.email || ''}
+                          className="py-2 px-3 text-sm rounded-sm bg-black/5 border border-solid border-black/10 cursor-not-allowed"
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="btn-gold py-2.5 font-bold tracking-widest text-xs uppercase mt-2 justify-center"
+                      >
+                        {loading ? 'Saving Changes...' : 'Save Profile Details'}
+                      </button>
+                    </form>
+                  </div>
+                )}
+
                 {/* 1. Orders Tab Content */}
                 {activeTab === 'orders' && (
                   <div className="flex flex-col gap-6 animate-fade-in">
                     <h3 className="font-editorial text-2xl font-bold uppercase tracking-wider border-b border-black/5 pb-2 mb-2">
-                       Bespoke Order History
+                      Bespoke Order History
                     </h3>
 
                     {orders.length === 0 ? (
@@ -217,7 +405,7 @@ export const AccountPage = () => {
                             Phone: {shippingAddress.phone}
                           </p>
                         </div>
-                        
+
                         <p className="text-[0.65rem] italic text-text-muted mt-3 pt-3 border-t border-black/5">
                           *Address will automatically populate during your checkout flow.
                         </p>

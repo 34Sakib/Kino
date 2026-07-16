@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ShoppingBag, X } from 'lucide-react';
 
 const RECENT_SALES = [
-  { name: 'Sarah from London', product: 'Travertine Sculpture Vessel', time: '3 minutes ago' },
-  { name: 'William from Milan', product: 'Atelier Oak Lounge Chair', time: '12 minutes ago' },
-  { name: 'Oliver from Copenhagen', product: 'Nordic Oak Writing Desk', time: '45 minutes ago' },
-  { name: 'Charlotte from Paris', product: 'Pure Flax Linen Bedding', time: '1 hour ago' },
-  { name: 'Elena from Tuscany', product: 'Artisan Ceramic Table Set', time: '2 hours ago' }
+  { name: 'Sakib from Dhaka', product: 'Travertine Sculpture Vessel', time: '3 minutes ago' },
+  { name: 'Anika from Chittagong', product: 'Atelier Oak Lounge Chair', time: '12 minutes ago' },
+  { name: 'Nabil from Sylhet', product: 'Nordic Oak Writing Desk', time: '45 minutes ago' },
+  { name: 'Nabila from Khulna', product: 'Pure Flax Linen Bedding', time: '1 hour ago' },
+  { name: 'Tanvir from Rajshahi', product: 'Artisan Ceramic Table Set', time: '2 hours ago' }
 ];
 
 export const ActivityPopup = () => {

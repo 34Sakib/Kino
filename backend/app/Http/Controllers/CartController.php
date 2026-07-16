@@ -51,7 +51,7 @@ class CartController extends Controller
     public function merge(Request $request)
     {
         $request->validate([
-            'guest_cart' => 'required|array'
+            'guest_cart' => 'present|array'
         ]);
 
         $user = $request->user();

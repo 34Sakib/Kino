@@ -1,15 +1,60 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { BLOG_POSTS } from './BlogPage';
 import { ArrowLeft, Calendar, Clock, Share2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import api from '../utils/api';
 
 export const BlogPostPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Find matching blog post
-  const post = BLOG_POSTS.find((p) => p.slug === slug);
+  useEffect(() => {
+    let active = true;
+    api.get(`/posts/${slug}`)
+      .then(res => {
+        if (active && res) {
+          setPost({
+            ...res,
+            date: res.published_at ? new Date(res.published_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }) : new Date(res.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }),
+            readTime: res.read_time || '5 min read',
+            image: res.image_url || 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=600&q=80'
+          });
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load blog post:", err);
+        // Local fallback
+        const local = BLOG_POSTS.find((p) => p.slug === slug);
+        if (local) setPost(local);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, [slug]);
+
+  const handleShareClick = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('Article link copied to clipboard.');
+  };
+
+  if (loading) {
+    return (
+      <div className="pt-32 pb-20 text-center container">
+        <p className="text-text-muted text-xs">Loading lookbook details...</p>
+      </div>
+    );
+  }
 
   if (!post) {
     return (
@@ -23,10 +68,10 @@ export const BlogPostPage = () => {
     );
   }
 
-  const handleShareClick = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast.success('Article link copied to clipboard.');
-  };
+  // Parse paragraphs dynamically
+  const paragraphs = post.body ? post.body.split('\n\n') : [];
+  const leadParagraph = paragraphs[0] || '';
+  const restParagraphs = paragraphs.slice(1);
 
   return (
     <div className="pt-28 pb-20 bg-white min-h-screen select-none">
@@ -69,18 +114,16 @@ export const BlogPostPage = () => {
 
         {/* Paragraphs content */}
         <div className="flex flex-col gap-6 text-sm text-text-muted leading-relaxed font-light mt-8">
-          <p className="font-editorial text-lg italic text-text-dark leading-relaxed font-normal">
-            "When we select materials, we prioritize silence. Visual weight doesn’t require complex shapes; it requires honest, raw structures that stand unburdened in the center of modern living rooms."
-          </p>
-          <p>
-            Travertine stone and raw white oak timber are characterized by textures that cannot be engineered. The pits and organic irregularities in volcanic stones, or the dark concentric rings representing centuries of slow tree growth inside oak fibers, cannot be replicated. 
-          </p>
-          <p>
-            When styling these items, visual directors suggest grouping contrasting surfaces together. Position a highly textured, hand-carved travertine vessel directly adjacent to a clean, smooth steel table or alongside soft linen drapery. The immediate contrast heightens the physical warmth of the room, creating an atmospheric focal point.
-          </p>
-          <p>
-            We strive to retain raw material integrity by applying only thin coatings of natural oils and organic mineral glazes. This allows the stone and timber to age naturally, developing a subtle patina unique to the air, moisture, and daily operations of your residential sanctuary.
-          </p>
+          {leadParagraph.startsWith('"') ? (
+            <p className="font-editorial text-lg italic text-text-dark leading-relaxed font-normal">
+              {leadParagraph}
+            </p>
+          ) : (
+            <p>{leadParagraph}</p>
+          )}
+          {restParagraphs.map((para, idx) => (
+            <p key={idx}>{para}</p>
+          ))}
         </div>
 
       </div>

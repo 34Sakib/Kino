@@ -201,4 +201,44 @@ class CheckoutController extends Controller
             'order' => $order->load('items.product')
         ]);
     }
+
+    public function validateCoupon(Request $request)
+    {
+        $request->validate([
+            'coupon_code' => 'required|string',
+            'subtotal' => 'required|numeric|min:0',
+            'email' => 'nullable|email'
+        ]);
+
+        $coupon = Coupon::where('code', $request->coupon_code)->first();
+
+        if (!$coupon) {
+            return response()->json(['error' => 'Coupon code not recognized.'], 404);
+        }
+
+        if (!$coupon->isValidFor($request->user(), $request->email)) {
+            return response()->json(['error' => 'Coupon has expired or usage limit is exceeded.'], 422);
+        }
+
+        if ($request->subtotal < $coupon->min_spend) {
+            return response()->json([
+                'error' => "Minimum subtotal of $" . number_format($coupon->min_spend, 2) . " required."
+            ], 422);
+        }
+
+        $discount = 0;
+        if ($coupon->type === 'percentage') {
+            $discount = $request->subtotal * ($coupon->value / 100);
+        } else if ($coupon->type === 'fixed') {
+            $discount = min($coupon->value, $request->subtotal);
+        }
+
+        return response()->json([
+            'coupon_id' => $coupon->id,
+            'code' => $coupon->code,
+            'type' => $coupon->type,
+            'value' => (float)$coupon->value,
+            'discount' => (float)$discount
+        ]);
+    }
 }

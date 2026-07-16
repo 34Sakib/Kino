@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import api from '../utils/api';
 
 const FAQ_DATA = [
   {
@@ -57,7 +58,25 @@ const FAQ_DATA = [
 ];
 
 export const FAQPage = () => {
+  const [faqs, setFaqs] = useState(FAQ_DATA);
+  const [loading, setLoading] = useState(true);
   const [openIndexes, setOpenIndexes] = useState({});
+
+  useEffect(() => {
+    let active = true;
+    api.get('/faqs')
+      .then(res => {
+        if (active && res && res.length > 0) {
+          setFaqs(res);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load FAQs:", err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
 
   const toggleFAQ = (catIdx, itemIdx) => {
     const key = `${catIdx}-${itemIdx}`;
@@ -84,7 +103,7 @@ export const FAQPage = () => {
 
         {/* FAQ list */}
         <div className="flex flex-col gap-10">
-          {FAQ_DATA.map((cat, catIdx) => (
+          {faqs.map((cat, catIdx) => (
             <div key={catIdx} className="flex flex-col gap-4">
               <h3 className="font-editorial text-xl font-bold uppercase tracking-wider border-b border-black/5 pb-2 text-text-dark">
                 {cat.category}

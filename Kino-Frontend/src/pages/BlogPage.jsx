@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight } from 'lucide-react';
+import api from '../utils/api';
 
 export const BLOG_POSTS = [
   {
@@ -30,6 +31,40 @@ export const BLOG_POSTS = [
 ];
 
 export const BlogPage = () => {
+  const [postsList, setPostsList] = useState(BLOG_POSTS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    api.get('/posts')
+      .then(res => {
+        if (active && res && res.length > 0) {
+          // Format date properties for rendering compatibility
+          const formatted = res.map(post => ({
+            ...post,
+            date: post.published_at ? new Date(post.published_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }) : new Date(post.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }),
+            readTime: post.read_time || '5 min read',
+            image: post.image_url || 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?auto=format&fit=crop&w=600&q=80'
+          }));
+          setPostsList(formatted);
+          setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to load blog posts:", err);
+        if (active) setLoading(false);
+      });
+    return () => { active = false; };
+  }, []);
+
   return (
     <div className="pt-28 pb-20 bg-white min-h-screen select-none">
       <div className="container">
@@ -47,7 +82,9 @@ export const BlogPage = () => {
 
         {/* Blog Post List */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {BLOG_POSTS.map((post) => (
+          {loading ? (
+            <div className="col-span-3 text-center text-xs text-text-muted">Loading journals...</div>
+          ) : postsList.map((post) => (
             <article 
               key={post.slug} 
               className="flex flex-col border border-solid border-black/5 rounded-sm p-4 hover:shadow-lg transition-all duration-300 bg-white"

@@ -4,6 +4,7 @@ import { Search, ShoppingBag, User, Heart, ChevronDown, LogOut, X, ArrowRight } 
 import { useCartStore } from '../../store/cartStore';
 import { useWishlistStore } from '../../store/wishlistStore';
 import { useUserStore } from '../../store/userStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import api from '../../utils/api';
 
 export const Navbar = () => {
@@ -15,7 +16,8 @@ export const Navbar = () => {
   const openCart = useCartStore((state) => state.openDrawer);
   const cartItems = useCartStore((state) => state.items);
   const wishlistItems = useWishlistStore((state) => state.items);
-  const { user, login, logout } = useUserStore();
+  const { user, login, register, logout } = useUserStore();
+  const settings = useSettingsStore((state) => state.settings);
 
   // Local State
   const [categories, setCategories] = useState([]);
@@ -26,6 +28,8 @@ export const Navbar = () => {
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginName, setLoginName] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [isRegisterDropdown, setIsRegisterDropdown] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [badgePop, setBadgePop] = useState(false);
   const isNavbarDarkBg = !isScrolled && location.pathname === '/';
@@ -123,14 +127,28 @@ export const Navbar = () => {
     navigate(`/product/${productId}`);
   };
 
-  // Handle Mock Authentication
-  const handleLoginSubmit = (e) => {
+  // Handle Real Authentication
+  const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    if (loginEmail.trim()) {
-      login(loginEmail, loginName.trim() || undefined);
+    if (!loginEmail.trim() || !loginPassword.trim()) {
+      toast.error('Email and Password are required.');
+      return;
+    }
+
+    try {
+      if (isRegisterDropdown) {
+        await register(loginName.trim() || null, loginEmail.trim(), loginPassword.trim());
+        toast.success('Account created successfully!');
+      } else {
+        await login(loginEmail.trim(), loginPassword.trim());
+        toast.success('Logged in successfully!');
+      }
       setLoginEmail('');
       setLoginName('');
+      setLoginPassword('');
       setIsAccountOpen(false);
+    } catch (err) {
+      toast.error(err.message || 'Authentication failed.');
     }
   };
 
@@ -217,12 +235,22 @@ export const Navbar = () => {
 
         {/* Center: Brand Logo */}
         <Link to="/" className="flex flex-col items-center">
-          <span className={`font-editorial text-2xl md:text-3xl font-semibold tracking-[0.2em] uppercase transition-colors duration-500 ${isNavbarDarkBg ? 'text-white' : 'text-text-dark'}`}>
-            Kino
-          </span>
-          <span className="text-[0.6rem] tracking-[0.4em] uppercase text-accent-gold mt-[-3px] font-price-label font-bold">
-            Atelier
-          </span>
+          {settings?.logo ? (
+            <img
+              src={api.resolveImageUrl(settings.logo)}
+              alt={settings.company_name || "Kino Atelier"}
+              className="h-10 w-auto object-contain"
+            />
+          ) : (
+            <>
+              <span className={`font-editorial text-2xl md:text-3xl font-semibold tracking-[0.2em] uppercase transition-colors duration-500 ${isNavbarDarkBg ? 'text-white' : 'text-text-dark'}`}>
+                {settings?.company_name || 'Kino'}
+              </span>
+              <span className="text-[0.6rem] tracking-[0.4em] uppercase text-accent-gold mt-[-3px] font-price-label font-bold">
+                Atelier
+              </span>
+            </>
+          )}
         </Link>
 
         {/* Right Side: Actions (Search, Account, Wishlist, Cart) */}
@@ -324,7 +352,7 @@ export const Navbar = () => {
                   <div>
                     <div className="flex items-center gap-3 border-b border-black/5 pb-3 mb-3">
                       <img
-                        src={user.avatar}
+                        src={api.resolveImageUrl(user.profile?.avatar) || user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80'}
                         alt={user.name}
                         className="w-8 h-8 rounded-full object-cover"
                       />
@@ -369,15 +397,17 @@ export const Navbar = () => {
                 ) : (
                   <form onSubmit={handleLoginSubmit} className="flex flex-col gap-2.5">
                     <p className="text-xs font-semibold uppercase tracking-wider text-text-dark">
-                      Sign In / Register
+                      {isRegisterDropdown ? 'Register' : 'Sign In'}
                     </p>
-                    <input
-                      type="text"
-                      placeholder="Your Name (Optional)"
-                      value={loginName}
-                      onChange={(e) => setLoginName(e.target.value)}
-                      className="py-1 px-2.5 text-xs rounded-sm"
-                    />
+                    {isRegisterDropdown && (
+                      <input
+                        type="text"
+                        placeholder="Your Name (Optional)"
+                        value={loginName}
+                        onChange={(e) => setLoginName(e.target.value)}
+                        className="py-1 px-2.5 text-xs rounded-sm animate-fade-in"
+                      />
+                    )}
                     <input
                       type="email"
                       required
@@ -386,12 +416,29 @@ export const Navbar = () => {
                       onChange={(e) => setLoginEmail(e.target.value)}
                       className="py-1 px-2.5 text-xs rounded-sm"
                     />
+                    <input
+                      type="password"
+                      required
+                      placeholder="Your Password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="py-1 px-2.5 text-xs rounded-sm"
+                    />
                     <button
                       type="submit"
                       className="btn-gold justify-center py-1.5 text-xs font-bold text-center w-full mt-1"
                     >
                       Authenticate
                     </button>
+                    <div className="text-center mt-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsRegisterDropdown(!isRegisterDropdown)}
+                        className="text-[0.6rem] text-accent-gold font-bold uppercase tracking-wider hover:underline"
+                      >
+                        {isRegisterDropdown ? 'Already registered? Log In' : "Don't have an account? Sign Up"}
+                      </button>
+                    </div>
                   </form>
                 )}
               </div>

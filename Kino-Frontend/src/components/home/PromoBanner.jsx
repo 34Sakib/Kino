@@ -2,12 +2,46 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../shared/Button';
 import { Clock } from 'lucide-react';
+import api from '../../utils/api';
 
 export const PromoBanner = () => {
   const navigate = useNavigate();
+  const [content, setContent] = useState({
+    title: '10% Off Private Collection',
+    subtitle: 'Limited Seasonal Release',
+    description: 'Enter private access code GOLDEN at checkout. Receive a complimentary hand-carved soapstone dish with orders exceeding $150.',
+    cta_text: 'Shop Private Sale',
+    cta_link: '/shop',
+    image_url: 'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=80',
+    meta_data: {
+      countdown_hours: 14,
+      countdown_minutes: 42,
+      countdown_seconds: 19,
+      coupon_code: 'GOLDEN'
+    }
+  });
   
-  // Urgent countdown state (cycles every day or sets a future date)
+  // Urgent countdown state
   const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 42, seconds: 19 });
+
+  useEffect(() => {
+    let active = true;
+    api.get('/sections/promo_banner')
+      .then(res => {
+        if (active && res) {
+          setContent(res);
+          if (res.meta_data) {
+            setTimeLeft({
+              hours: parseInt(res.meta_data.countdown_hours || 14),
+              minutes: parseInt(res.meta_data.countdown_minutes || 42),
+              seconds: parseInt(res.meta_data.countdown_seconds || 19)
+            });
+          }
+        }
+      })
+      .catch(err => console.error("Failed to load promo banner content:", err));
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -33,7 +67,7 @@ export const PromoBanner = () => {
       {/* Background Image overlay */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=80"
+          src={content.image_url}
           alt="Luxury living architectural space"
           className="w-full h-full object-cover opacity-25 filter brightness-[0.7] contrast-[1.05]"
         />
@@ -45,21 +79,21 @@ export const PromoBanner = () => {
         {/* Left Column: Promotion details */}
         <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-4 max-w-xl">
           <span className="text-[0.65rem] uppercase tracking-[0.25em] font-bold text-accent-gold font-price-label">
-            Limited Seasonal Release
+            {content.subtitle}
           </span>
           <h2 className="font-editorial text-4xl md:text-5xl text-white font-medium leading-tight">
-            10% Off Private Collection
+            {content.title}
           </h2>
           <p className="text-sm text-white/50 leading-relaxed font-light">
-            Enter private access code <span className="font-bold text-accent-gold font-price-label">GOLDEN</span> at checkout. Receive a complimentary hand-carved soapstone dish with orders exceeding $150.
+            {content.description}
           </p>
           <div className="flex mt-2">
             <Button
-              onClick={() => navigate('/shop')}
+              onClick={() => navigate(content.cta_link)}
               variant="gold"
               className="font-bold tracking-widest px-8"
             >
-              Shop Private Sale
+              {content.cta_text}
             </Button>
           </div>
         </div>

@@ -3,36 +3,43 @@ import { useCartStore } from '../../store/cartStore';
 import { Button } from '../shared/Button';
 import { toast } from 'react-hot-toast';
 import { Tag } from 'lucide-react';
+import api from '../../utils/api';
 
 export const CartSummary = ({ onCheckout }) => {
   const getTotal = useCartStore((state) => state.getTotal);
   const subtotal = getTotal();
   const [promoCode, setPromoCode] = useState('');
-  const [discountPercent, setDiscountPercent] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0);
   const [activeCode, setActiveCode] = useState('');
 
-  // Shipping logic
-  const shippingThreshold = 50;
-  const shippingCost = subtotal >= shippingThreshold || subtotal === 0 ? 0 : 9.99;
-  const discountAmount = subtotal * (discountPercent / 100);
+  // Shipping logic (matched with backend thresholds)
+  const shippingThreshold = 500;
+  const shippingCost = subtotal >= shippingThreshold || subtotal === 0 ? 0 : 25.00;
   const total = subtotal - discountAmount + shippingCost;
 
   const handleApplyPromo = (e) => {
     e.preventDefault();
     const code = promoCode.trim().toUpperCase();
 
-    if (code === 'GOLDEN' || code === 'ATELIER') {
-      setDiscountPercent(10);
-      setActiveCode(code);
-      setPromoCode('');
-      toast.success('10% discount applied to order!');
-    } else {
-      toast.error('Invalid promo code.');
-    }
+    if (!code) return;
+
+    api.post('/checkout/validate-coupon', {
+      coupon_code: code,
+      subtotal: subtotal
+    })
+      .then(res => {
+        setDiscountAmount(res.discount);
+        setActiveCode(res.code);
+        setPromoCode('');
+        toast.success(`Coupon code ${res.code} applied successfully.`);
+      })
+      .catch(err => {
+        toast.error(err.message || 'Promo code not recognized or spend requirement not met.');
+      });
   };
 
   const handleRemovePromo = () => {
-    setDiscountPercent(0);
+    setDiscountAmount(0);
     setActiveCode('');
     toast.success('Promo code removed.');
   };

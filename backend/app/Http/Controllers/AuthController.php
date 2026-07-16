@@ -12,13 +12,13 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'nullable|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
         ]);
 
         $user = User::create([
-            'name' => $request->name,
+            'name' => $request->name ?? explode('@', $request->email)[0],
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
@@ -72,6 +72,42 @@ class AuthController extends Controller
     {
         return response()->json(
             $request->user()->load('roles', 'profile', 'addresses')
+        );
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        
+        $request->validate([
+            'name' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'avatar' => 'nullable|image|max:2048',
+        ]);
+
+        if ($request->has('name')) {
+            $user->update(['name' => $request->name]);
+        }
+
+        $profile = $user->profile;
+        if (!$profile) {
+            $profile = \App\Models\UserProfile::create([
+                'user_id' => $user->id,
+                'preferences' => ['cart' => []]
+            ]);
+        }
+
+        if ($request->has('phone')) {
+            $profile->update(['phone' => $request->phone]);
+        }
+
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('avatars', 'public');
+            $profile->update(['avatar' => $path]);
+        }
+
+        return response()->json(
+            $user->load('roles', 'profile', 'addresses')
         );
     }
 }

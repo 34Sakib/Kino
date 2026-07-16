@@ -1,15 +1,18 @@
-const BASE_URL = 'http://localhost:8000/api';
+const BASE_URL = 'http://127.0.0.1:8000/api';
 
 class ApiClient {
   async request(endpoint, options = {}) {
     const token = localStorage.getItem('auth_token');
     
     const headers = {
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
       ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       ...(options.headers || {})
     };
+
+    if (options.body && !(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       ...options,
@@ -35,11 +38,13 @@ class ApiClient {
   }
 
   post(endpoint, body, options = {}) {
-    return this.request(endpoint, { ...options, method: 'POST', body: JSON.stringify(body) });
+    const finalBody = body instanceof FormData ? body : JSON.stringify(body);
+    return this.request(endpoint, { ...options, method: 'POST', body: finalBody });
   }
 
   put(endpoint, body, options = {}) {
-    return this.request(endpoint, { ...options, method: 'PUT', body: JSON.stringify(body) });
+    const finalBody = body instanceof FormData ? body : JSON.stringify(body);
+    return this.request(endpoint, { ...options, method: 'PUT', body: finalBody });
   }
 
   delete(endpoint, options = {}) {

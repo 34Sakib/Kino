@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Hero } from '../components/home/Hero';
 import { CategoryGrid } from '../components/home/CategoryGrid';
 import { FeaturedProducts } from '../components/home/FeaturedProducts';
@@ -9,17 +9,42 @@ import { Newsletter } from '../components/home/Newsletter';
 import { testimonials } from '../data/testimonials';
 import { StarRating } from '../components/shared/StarRating';
 import { ArrowRight } from 'lucide-react';
+import api from '../utils/api';
 
 const INSTA_IMAGES = [
   'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=400&h=400&q=80',
   'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=400&h=400&q=80',
   'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=400&h=400&q=80',
-  'https://images.unsplash.com/photo-1556912172-3bb406ef7e77?auto=format&fit=crop&w=400&h=400&q=80',
+  'https://images.unsplash.com/photo-1592078615290-033ee584e267?auto=format&fit=crop&w=400&h=400&q=80',
   'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?auto=format&fit=crop&w=400&h=400&q=80'
 ];
 
 export const Home = () => {
   const [activeReviewIdx, setActiveReviewIdx] = useState(0);
+  const [reviews, setReviews] = useState(testimonials);
+  const [instaData, setInstaData] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    
+    api.get('/reviews')
+      .then(res => {
+        if (active && res && res.length > 0) {
+          setReviews(res);
+        }
+      })
+      .catch(err => console.error("Failed to load home testimonials:", err));
+
+    api.get('/sections/instagram_feed')
+      .then(res => {
+        if (active) {
+          setInstaData(res);
+        }
+      })
+      .catch(err => console.error("Failed to load home instagram section:", err));
+
+    return () => { active = false; };
+  }, []);
 
   return (
     <div className="w-full">
@@ -51,29 +76,31 @@ export const Home = () => {
             Atelier Impressions
           </h2>
           
-          <div className="min-h-[220px] flex flex-col items-center justify-center gap-4 py-4">
-            <StarRating rating={testimonials[activeReviewIdx].rating} size={18} className="justify-center" />
-            
-            <p className="font-editorial text-xl md:text-2xl italic text-text-dark max-w-2xl leading-relaxed">
-              "{testimonials[activeReviewIdx].content}"
-            </p>
+          {reviews.length > 0 && (
+            <div className="min-h-[220px] flex flex-col items-center justify-center gap-4 py-4 animate-fade-in">
+              <StarRating rating={reviews[activeReviewIdx].rating} size={18} className="justify-center" />
+              
+              <p className="font-editorial text-xl md:text-2xl italic text-text-dark max-w-2xl leading-relaxed">
+                "{reviews[activeReviewIdx].content || reviews[activeReviewIdx].comment}"
+              </p>
 
-            <div className="flex items-center gap-3 mt-4">
-              <img
-                src={testimonials[activeReviewIdx].avatar}
-                alt={testimonials[activeReviewIdx].name}
-                className="w-10 h-10 rounded-full object-cover border border-solid border-black/5"
-              />
-              <div className="text-left">
-                <p className="text-xs font-bold text-text-dark">{testimonials[activeReviewIdx].name}</p>
-                <p className="text-[0.65rem] text-text-muted uppercase tracking-wider">{testimonials[activeReviewIdx].role}</p>
+              <div className="flex items-center gap-3 mt-4">
+                <img
+                  src={reviews[activeReviewIdx].avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80'}
+                  alt={reviews[activeReviewIdx].name}
+                  className="w-10 h-10 rounded-full object-cover border border-solid border-black/5"
+                />
+                <div className="text-left">
+                  <p className="text-xs font-bold text-text-dark">{reviews[activeReviewIdx].name}</p>
+                  <p className="text-[0.65rem] text-text-muted uppercase tracking-wider">{reviews[activeReviewIdx].role || 'Collector'}</p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Carousel dots */}
           <div className="flex items-center gap-2 mt-4">
-            {testimonials.map((_, idx) => (
+            {reviews.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveReviewIdx(idx)}
@@ -92,18 +119,29 @@ export const Home = () => {
         <div className="container mb-8 flex flex-col items-center gap-2">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent-gold"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
           <span className="text-[0.65rem] uppercase tracking-[0.25em] font-bold text-accent-gold font-price-label">
-            Share Your Form
+            {instaData?.subtitle || 'Share Your Form'}
           </span>
           <h2 className="font-editorial text-3xl md:text-4xl text-white font-medium">
-            #KinoAtelier
+            {instaData?.title || '#KinoAtelier'}
           </h2>
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-5 gap-1.5 w-full px-1.5">
-          {INSTA_IMAGES.map((img, idx) => (
+          {(instaData?.meta_data
+            ? [
+                instaData.meta_data.image_1,
+                instaData.meta_data.image_2,
+                instaData.meta_data.image_3,
+                instaData.meta_data.image_4,
+                instaData.meta_data.image_5
+              ].filter(Boolean)
+            : INSTA_IMAGES
+          ).map((img, idx) => (
             <a
               key={idx}
-              href="#"
+              href={instaData?.meta_data?.instagram_link || '#'}
+              target="_blank"
+              rel="noopener noreferrer"
               className="relative group block aspect-square overflow-hidden bg-black"
             >
               <img

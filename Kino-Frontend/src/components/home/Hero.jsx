@@ -1,11 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '../shared/Button';
+import api from '../../utils/api';
 
 export const Hero = () => {
   const navigate = useNavigate();
+  const [content, setContent] = useState({
+    title: 'Sculptural <br /> <span class="italic text-accent-gold font-medium">Silent</span> Form',
+    subtitle: 'Kino Atelier — Collection 04',
+    description: 'Elevating architectural spaces with curated interior pieces, handcrafted from single-source raw travertine, white oak, and fluted earthenware.',
+    cta_text: 'Shop Now',
+    cta_link: '/shop',
+    image_url: 'https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&w=1600&q=80',
+    meta_data: {
+      explore_text: 'Explore Collection',
+      explore_link: '/about',
+      active_spaces_count: 'Over 12,847 happy spaces curated globally'
+    }
+  });
+
+  useEffect(() => {
+    let active = true;
+    api.get('/sections/home_hero')
+      .then(res => {
+        if (active && res) {
+          setContent(res);
+        }
+      })
+      .catch(err => console.error("Failed to load hero content:", err));
+    return () => { active = false; };
+  }, []);
 
   const scrollToCollection = () => {
     const section = document.getElementById('featured-collection');
@@ -24,7 +50,7 @@ export const Hero = () => {
           initial={{ scale: 1.06, opacity: 0 }}
           animate={{ scale: 1, opacity: 0.5 }}
           transition={{ duration: 3, ease: 'easeOut' }}
-          src="https://images.unsplash.com/photo-1618219908412-a29a1bb7b86e?auto=format&fit=crop&w=1600&q=80"
+          src={content.image_url}
           alt="Luxury living space design background"
           className="w-full h-full object-cover filter brightness-[0.8] contrast-[1.05]"
         />
@@ -41,7 +67,7 @@ export const Hero = () => {
           transition={{ duration: 0.8, delay: 0.1 }}
           className="text-accent-gold text-xs font-bold uppercase tracking-[0.3em] font-price-label"
         >
-          Kino Atelier — Collection 04
+          {content.subtitle}
         </motion.span>
 
         {/* 2-4 Words Bold Headline */}
@@ -50,21 +76,21 @@ export const Hero = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.2 }}
           className="font-editorial text-5xl md:text-7xl lg:text-8xl text-white font-light tracking-wide leading-[1.05] max-w-4xl"
-        >
-          Sculptural <br />
-          <span className="italic text-accent-gold font-medium">Silent</span> Form
-        </motion.h1>
+          dangerouslySetInnerHTML={{ __html: content.title }}
+        />
 
         {/* Social Proof Counter */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.35 }}
-          className="text-accent-gold text-xs font-bold uppercase tracking-wider font-price-label flex items-center gap-1.5"
-        >
-          <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          Over 12,847 happy spaces curated globally
-        </motion.p>
+        {content.meta_data?.active_spaces_count && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.35 }}
+            className="text-accent-gold text-xs font-bold uppercase tracking-wider font-price-label flex items-center gap-1.5"
+          >
+            <span className="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+            {content.meta_data.active_spaces_count}
+          </motion.p>
+        )}
 
         {/* Value Prop Subline */}
         <motion.p
@@ -73,7 +99,7 @@ export const Hero = () => {
           transition={{ duration: 0.8, delay: 0.4 }}
           className="text-white/60 text-sm md:text-base max-w-lg font-light leading-relaxed mt-2"
         >
-          Elevating architectural spaces with curated interior pieces, handcrafted from single-source raw travertine, white oak, and fluted earthenware.
+          {content.description}
         </motion.p>
 
         {/* Two CTAs */}
@@ -84,19 +110,21 @@ export const Hero = () => {
           className="flex flex-col sm:flex-row items-center gap-4 mt-6 w-full sm:w-auto"
         >
           <Button
-            onClick={() => navigate('/shop')}
+            onClick={() => navigate(content.cta_link)}
             variant="gold"
             icon={ArrowRight}
             className="w-full sm:w-auto font-bold tracking-widest px-8"
           >
-            Shop Now
+            {content.cta_text}
           </Button>
-          <button
-            onClick={() => navigate('/about')}
-            className="w-full sm:w-auto btn-outline-white font-bold tracking-widest px-8"
-          >
-            Explore Collection
-          </button>
+          {content.meta_data?.explore_text && (
+            <button
+              onClick={() => navigate(content.meta_data.explore_link || '/about')}
+              className="w-full sm:w-auto btn-outline-white font-bold tracking-widest px-8"
+            >
+              {content.meta_data.explore_text}
+            </button>
+          )}
         </motion.div>
 
         {/* Press logos strip */}

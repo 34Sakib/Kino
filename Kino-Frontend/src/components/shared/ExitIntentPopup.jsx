@@ -92,7 +92,7 @@ export const ExitIntentPopup = () => {
                 </h3>
 
                 <p className="text-xs text-text-muted leading-relaxed max-w-sm">
-                  Join our Lookbook Journal to claim your private discount code and receive styling blueprints from our design directors.
+                  Join our Lookbook Journal to claim your private discount code, with premium doorstep delivery options now available across Bangladesh.
                 </p>
 
                 <div className="flex flex-col gap-2 w-full mt-2">
