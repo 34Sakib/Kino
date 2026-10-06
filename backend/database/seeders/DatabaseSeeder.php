@@ -92,85 +92,206 @@ class DatabaseSeeder extends Seeder
         $colCharcoal = AttributeValue::create(['attribute_id' => $colorAttr->id, 'value' => 'Charcoal', 'meta' => '#1E1E1E']);
 
         // 5. Seed Categories
-        $accCat = Category::create([
-            'name' => 'Sculptural Accents',
-            'slug' => 'accessories',
-            'description' => 'Organic travertine trays, vases, and bowls.',
-            'image' => 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=800&q=80'
+        $sofaCat = Category::create([
+            'name' => 'Sofas & Modular Lounges',
+            'slug' => 'sofas',
+            'description' => 'Hand-tailored modular velvet, bouclé, and washed linen seating systems.',
+            'image' => 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80'
         ]);
 
         $livingCat = Category::create([
-            'name' => 'Living Sanctuary',
+            'name' => 'Living Sanctuary & Chairs',
             'slug' => 'living-room',
-            'description' => 'Solid European oak lounge chairs, sideboards, and benches.',
+            'description' => 'Solid European white oak lounge chairs, sideboards, and benches.',
             'image' => 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80'
         ]);
 
+        $tableCat = Category::create([
+            'name' => 'Dining & Coffee Tables',
+            'slug' => 'tables',
+            'description' => 'Single-slab Italian marble and smoked French oak statement tables.',
+            'image' => 'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=800&q=80'
+        ]);
+
         $lightCat = Category::create([
-            'name' => 'Silent Lighting',
+            'name' => 'Silent Architectural Lighting',
             'slug' => 'lighting',
-            'description' => 'Wheel-thrown ceramic lamps and fluted shades.',
-            'image' => 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=800&q=80'
+            'description' => 'Wheel-thrown ceramic lamps, alabaster sconces, and fluted brass shades.',
+            'image' => 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=800&q=80'
+        ]);
+
+        $accCat = Category::create([
+            'name' => 'Sculptural Accents & Vessels',
+            'slug' => 'accessories',
+            'description' => 'Organic travertine trays, stoneware vases, and bronze catch-alls.',
+            'image' => 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=800&q=80'
+        ]);
+
+        $rugCat = Category::create([
+            'name' => 'Bespoke Rugs & Textiles',
+            'slug' => 'rugs',
+            'description' => 'Hand-knotted Tibetan wool and washed organic linen floor coverings.',
+            'image' => 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=800&q=80'
         ]);
 
         // 6. Seed Products
-        // Travertine Vessel
-        $vessel = Product::create([
-            'category_id' => $accCat->id,
-            'name' => 'Travertine Sculpture Vessel',
-            'tagline' => 'Hand-carved travertine catch-all',
-            'description' => 'Formed by geothermal thermal springs over centuries, this travertine vessel displays unique voids and granular structures. Carved out of single-source quarry blocks in Tuscany workshops.',
-            'price' => 180.00,
+
+        // Product 1: Elysian Modular Velvet Sofa
+        $sofa = Product::create([
+            'category_id' => $sofaCat->id,
+            'name' => 'Elysian Modular Velvet Sofa',
+            'tagline' => 'Curved 3-piece modular lounge in Italian velvet',
+            'description' => 'Constructed with FSC-certified kiln-dried hardwood and cushioned with layered high-resilience memory foam. Wrapped in tactile, stain-resistant Italian cotton velvet with subtle brass plinth detailing.',
+            'original_price' => 3200.00,
+            'price' => 2890.00,
+            'badge' => 'Bestseller',
+            'status' => 'published'
+        ]);
+        ProductImage::create(['product_id' => $sofa->id, 'url' => 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1]);
+        ProductImage::create(['product_id' => $sofa->id, 'url' => 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 2]);
+        $sofaVar1 = ProductVariant::create(['product_id' => $sofa->id, 'sku' => 'ELY-SOFA-CRM', 'price_modifier' => 0.00, 'attribute_values_json' => [$colCream->id]]);
+        $sofaVar2 = ProductVariant::create(['product_id' => $sofa->id, 'sku' => 'ELY-SOFA-GLD', 'price_modifier' => 150.00, 'attribute_values_json' => [$colGold->id]]);
+        Inventory::create(['variant_id' => $sofaVar1->id, 'stock' => 8]);
+        Inventory::create(['variant_id' => $sofaVar2->id, 'stock' => 5]);
+
+        // Product 2: Noir Smoked Oak Dining Table
+        $diningTable = Product::create([
+            'category_id' => $tableCat->id,
+            'name' => 'Noir Smoked Oak Dining Table',
+            'tagline' => 'Hand-burnished monolithic timber table',
+            'description' => 'Sculpted from European solid oak logs treated with natural iron oxide fume for an organic deep charcoal finish. Features continuous grain flow across pill-shaped edges.',
+            'original_price' => 2250.00,
+            'price' => 1990.00,
+            'badge' => 'New Release',
+            'status' => 'published'
+        ]);
+        ProductImage::create(['product_id' => $diningTable->id, 'url' => 'https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1]);
+        ProductImage::create(['product_id' => $diningTable->id, 'url' => 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 2]);
+        $tMed = ProductVariant::create(['product_id' => $diningTable->id, 'sku' => 'NOI-TBL-200', 'price_modifier' => 0.00, 'attribute_values_json' => [$szMed->id]]);
+        $tLrg = ProductVariant::create(['product_id' => $diningTable->id, 'sku' => 'NOI-TBL-260', 'price_modifier' => 350.00, 'attribute_values_json' => [$szLarge->id]]);
+        Inventory::create(['variant_id' => $tMed->id, 'stock' => 6]);
+        Inventory::create(['variant_id' => $tLrg->id, 'stock' => 3]);
+
+        // Product 3: Lumina Brass Pendant Chandelier
+        $lamp = Product::create([
+            'category_id' => $lightCat->id,
+            'name' => 'Lumina Brass Pendant Chandelier',
+            'tagline' => 'Spun brass and frosted opaline glass globe',
+            'description' => 'Spun from solid raw brass and paired with mouth-blown frosted acid-etched glass. Emits a soft warm 2700K ambient illumination suitable for dining and foyer canopies.',
+            'original_price' => 720.00,
+            'price' => 645.00,
             'badge' => 'Exclusive',
             'status' => 'published'
         ]);
+        ProductImage::create(['product_id' => $lamp->id, 'url' => 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1]);
+        ProductImage::create(['product_id' => $lamp->id, 'url' => 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 2]);
+        $lGold = ProductVariant::create(['product_id' => $lamp->id, 'sku' => 'LUM-PND-GLD', 'price_modifier' => 0.00, 'attribute_values_json' => [$colGold->id]]);
+        $lChr = ProductVariant::create(['product_id' => $lamp->id, 'sku' => 'LUM-PND-CHR', 'price_modifier' => 25.00, 'attribute_values_json' => [$colCharcoal->id]]);
+        Inventory::create(['variant_id' => $lGold->id, 'stock' => 24]);
+        Inventory::create(['variant_id' => $lChr->id, 'stock' => 14]);
 
-        ProductImage::create(['product_id' => $vessel->id, 'url' => 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=800&q=80', 'sort_order' => 1]);
-
-        $vSmall = ProductVariant::create([
-            'product_id' => $vessel->id,
-            'sku' => 'TRAV-VESSEL-SM',
-            'price_modifier' => 0.00,
-            'attribute_values_json' => [$szSmall->id]
-        ]);
-        Inventory::create(['variant_id' => $vSmall->id, 'stock' => 12]);
-
-        $vMed = ProductVariant::create([
-            'product_id' => $vessel->id,
-            'sku' => 'TRAV-VESSEL-MD',
-            'price_modifier' => 45.00,
-            'attribute_values_json' => [$szMed->id]
-        ]);
-        Inventory::create(['variant_id' => $vMed->id, 'stock' => 5]);
-
-        // Oak Lounge Chair
+        // Product 4: Atelier Oak Fireside Lounge Chair
         $chair = Product::create([
             'category_id' => $livingCat->id,
             'name' => 'Atelier Oak Lounge Chair',
-            'tagline' => 'Solid oak fireside chair',
-            'description' => 'Crafted out of Danish white oak timber logs. Uses classic tapered mortise-and-tenon joinery methods to ensure durability. Hand-burnished with non-toxic oils.',
+            'tagline' => 'Solid Danish white oak fireside chair',
+            'description' => 'Crafted out of Danish white oak timber logs. Uses classic tapered mortise-and-tenon joinery methods to ensure lifetime durability. Hand-burnished with non-toxic matte wax oils.',
+            'original_price' => 850.00,
             'price' => 750.00,
             'badge' => 'Bestseller',
             'status' => 'published'
         ]);
+        ProductImage::create(['product_id' => $chair->id, 'url' => 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1]);
+        ProductImage::create(['product_id' => $chair->id, 'url' => 'https://images.unsplash.com/photo-1580481077195-c546e7f7b767?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 2]);
+        $cCream = ProductVariant::create(['product_id' => $chair->id, 'sku' => 'OAK-CHAIR-CRM', 'price_modifier' => 0.00, 'attribute_values_json' => [$colCream->id]]);
+        $cCharcoal = ProductVariant::create(['product_id' => $chair->id, 'sku' => 'OAK-CHAIR-CHR', 'price_modifier' => 50.00, 'attribute_values_json' => [$colCharcoal->id]]);
+        Inventory::create(['variant_id' => $cCream->id, 'stock' => 10]);
+        Inventory::create(['variant_id' => $cCharcoal->id, 'stock' => 4]);
 
-        ProductImage::create(['product_id' => $chair->id, 'url' => 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80', 'sort_order' => 1]);
-
-        $cCream = ProductVariant::create([
-            'product_id' => $chair->id,
-            'sku' => 'OAK-CHAIR-CRM',
-            'price_modifier' => 0.00,
-            'attribute_values_json' => [$colCream->id]
+        // Product 5: Carrara Fluted Marble Coffee Table
+        $coffeeTable = Product::create([
+            'category_id' => $tableCat->id,
+            'name' => 'Carrara Fluted Marble Coffee Table',
+            'tagline' => 'Honed Italian marble with fluted cylinder base',
+            'description' => 'Sourced from legendary Tuscan marble quarries. Honed to a silky satin touch that repels liquids while highlighting grey metamorphic veining across the tabletop surface.',
+            'original_price' => 1650.00,
+            'price' => 1450.00,
+            'badge' => 'Luxury Craft',
+            'status' => 'published'
         ]);
-        Inventory::create(['variant_id' => $cCream->id, 'stock' => 4]);
+        ProductImage::create(['product_id' => $coffeeTable->id, 'url' => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1]);
+        $cfSm = ProductVariant::create(['product_id' => $coffeeTable->id, 'sku' => 'MAR-COF-90', 'price_modifier' => 0.00, 'attribute_values_json' => [$szSmall->id]]);
+        $cfLrg = ProductVariant::create(['product_id' => $coffeeTable->id, 'sku' => 'MAR-COF-120', 'price_modifier' => 280.00, 'attribute_values_json' => [$szLarge->id]]);
+        Inventory::create(['variant_id' => $cfSm->id, 'stock' => 12]);
+        Inventory::create(['variant_id' => $cfLrg->id, 'stock' => 5]);
 
-        $cCharcoal = ProductVariant::create([
-            'product_id' => $chair->id,
-            'sku' => 'OAK-CHAIR-CHR',
-            'price_modifier' => 50.00,
-            'attribute_values_json' => [$colCharcoal->id]
+        // Product 6: Travertine Sculpture Catch-all Vessel
+        $vessel = Product::create([
+            'category_id' => $accCat->id,
+            'name' => 'Travertine Sculpture Vessel',
+            'tagline' => 'Hand-carved geothermal travertine catch-all',
+            'description' => 'Formed by thermal mineral springs over centuries, this vessel displays unique natural voids and granular earth textures. Carved out of single quarry blocks in Rapolano workshops.',
+            'original_price' => 210.00,
+            'price' => 180.00,
+            'badge' => 'Artisan',
+            'status' => 'published'
         ]);
-        Inventory::create(['variant_id' => $cCharcoal->id, 'stock' => 2]);
+        ProductImage::create(['product_id' => $vessel->id, 'url' => 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1]);
+        $vSmall = ProductVariant::create(['product_id' => $vessel->id, 'sku' => 'TRAV-VESSEL-SM', 'price_modifier' => 0.00, 'attribute_values_json' => [$szSmall->id]]);
+        $vMed = ProductVariant::create(['product_id' => $vessel->id, 'sku' => 'TRAV-VESSEL-MD', 'price_modifier' => 45.00, 'attribute_values_json' => [$szMed->id]]);
+        Inventory::create(['variant_id' => $vSmall->id, 'stock' => 18]);
+        Inventory::create(['variant_id' => $vMed->id, 'stock' => 9]);
+
+        // Product 7: Komorebi Washed Silk & Wool Rug
+        $rug = Product::create([
+            'category_id' => $rugCat->id,
+            'name' => 'Komorebi Hand-Knotted Wool Rug',
+            'tagline' => 'High-pile Tibetan highland wool & spun silk',
+            'description' => 'Over 120,000 individual hand knots per square meter. Features an abstract relief inspired by sunlight filtering through forest canopies. Naturally dirt-repelling and soft underfoot.',
+            'original_price' => 3600.00,
+            'price' => 3200.00,
+            'badge' => 'Masterpiece',
+            'status' => 'published'
+        ]);
+        ProductImage::create(['product_id' => $rug->id, 'url' => 'https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1]);
+        $rMed = ProductVariant::create(['product_id' => $rug->id, 'sku' => 'RUG-KOM-200', 'price_modifier' => 0.00, 'attribute_values_json' => [$szMed->id]]);
+        $rLrg = ProductVariant::create(['product_id' => $rug->id, 'sku' => 'RUG-KOM-300', 'price_modifier' => 800.00, 'attribute_values_json' => [$szLarge->id]]);
+        Inventory::create(['variant_id' => $rMed->id, 'stock' => 4]);
+        Inventory::create(['variant_id' => $rLrg->id, 'stock' => 2]);
+
+        // Product 8: Sylvan Bouclé Accent Armchair
+        $boucleChair = Product::create([
+            'category_id' => $livingCat->id,
+            'name' => 'Sylvan Bouclé Accent Armchair',
+            'tagline' => 'Organic cocoon silhouette in heavy textured bouclé',
+            'description' => 'A sculptural low-slung accent chair with a hidden 360-degree swivel mechanism. Upholstered in premium Italian wool-blend bouclé fabric with a deep, cocooning embrace.',
+            'original_price' => 990.00,
+            'price' => 890.00,
+            'badge' => 'Limited',
+            'status' => 'published'
+        ]);
+        ProductImage::create(['product_id' => $boucleChair->id, 'url' => 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1]);
+        $bCream = ProductVariant::create(['product_id' => $boucleChair->id, 'sku' => 'SYL-CHR-CRM', 'price_modifier' => 0.00, 'attribute_values_json' => [$colCream->id]]);
+        $bGold = ProductVariant::create(['product_id' => $boucleChair->id, 'sku' => 'SYL-CHR-GLD', 'price_modifier' => 60.00, 'attribute_values_json' => [$colGold->id]]);
+        Inventory::create(['variant_id' => $bCream->id, 'stock' => 7]);
+        Inventory::create(['variant_id' => $bGold->id, 'stock' => 3]);
+
+        // Product 9: Aura Ribbed Ceramic Table Lamp
+        $tableLamp = Product::create([
+            'category_id' => $lightCat->id,
+            'name' => 'Aura Ribbed Ceramic Table Lamp',
+            'tagline' => 'Hand-thrown terracotta base with natural linen shade',
+            'description' => 'Individually wheel-thrown in Portugal using mineral-rich terracotta clay. Finished with a vertical fluted ribbing and topped with a natural tailored Belgian linen empire shade.',
+            'original_price' => 480.00,
+            'price' => 420.00,
+            'badge' => 'Trending',
+            'status' => 'published'
+        ]);
+        ProductImage::create(['product_id' => $tableLamp->id, 'url' => 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=1200&q=80', 'sort_order' => 1]);
+        $aCrm = ProductVariant::create(['product_id' => $tableLamp->id, 'sku' => 'AUR-LMP-CRM', 'price_modifier' => 0.00, 'attribute_values_json' => [$colCream->id]]);
+        $aGld = ProductVariant::create(['product_id' => $tableLamp->id, 'sku' => 'AUR-LMP-GLD', 'price_modifier' => 30.00, 'attribute_values_json' => [$colGold->id]]);
+        Inventory::create(['variant_id' => $aCrm->id, 'stock' => 15]);
+        Inventory::create(['variant_id' => $aGld->id, 'stock' => 8]);
 
         // 7. Seed Homepage Content Sections
         PageSection::create([

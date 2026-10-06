@@ -7,7 +7,13 @@ const RECENT_SALES = [
   { name: 'Anika from Chittagong', product: 'Atelier Oak Lounge Chair', time: '12 minutes ago' },
   { name: 'Nabil from Sylhet', product: 'Nordic Oak Writing Desk', time: '45 minutes ago' },
   { name: 'Nabila from Khulna', product: 'Pure Flax Linen Bedding', time: '1 hour ago' },
-  { name: 'Tanvir from Rajshahi', product: 'Artisan Ceramic Table Set', time: '2 hours ago' }
+  { name: 'Tanvir from Rajshahi', product: 'Artisan Ceramic Table Set', time: '2 hours ago' },
+  { name: 'Rahim from Mirpur', product: 'Modular Aluminum Shelving System', time: '2 hours ago' },
+  { name: 'Karim from Barisal', product: 'Handwoven Jute Area Rug', time: '2 hours ago' },
+  { name: 'Sultana from Gazipur', product: 'Solid Acacia Wood Bench', time: '2 hours ago' },
+  { name: 'Tasnim from Dinajpur', product: 'Marble Top Pedestal Table', time: '2 hours ago' },
+  { name: 'Jasim from Bogura', product: 'Leather Accent Pouf', time: '2 hours ago' },
+  { name: 'Fahim from Chittagong', product: 'Leather Accent Pouf', time: '2 hours ago' },
 ];
 
 export const ActivityPopup = () => {
@@ -23,7 +29,7 @@ export const ActivityPopup = () => {
     // Dynamic rotation interval
     const interval = setInterval(() => {
       setActiveSale(null); // Dismiss current first
-      
+
       setTimeout(() => {
         setSalesIndex((prev) => {
           const nextIdx = (prev + 1) % RECENT_SALES.length;

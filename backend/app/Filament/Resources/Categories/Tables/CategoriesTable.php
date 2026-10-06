@@ -15,17 +15,29 @@ class CategoriesTable
     {
         return $table
             ->columns([
+                ImageColumn::make('image')
+                    ->label('Cover')
+                    ->circular()
+                    ->size(44)
+                    ->defaultImageUrl('https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=200&q=80'),
                 TextColumn::make('name')
-                    ->searchable(),
+                    ->label('Category Name')
+                    ->weight('bold')
+                    ->searchable()
+                    ->description(fn ($record) => $record->description),
                 TextColumn::make('slug')
+                    ->label('Slug')
+                    ->badge()
+                    ->color('gray')
                     ->searchable(),
-                ImageColumn::make('image'),
+                TextColumn::make('products_count')
+                    ->label('Catalog Items')
+                    ->counts('products')
+                    ->badge()
+                    ->color('primary')
+                    ->sortable(),
                 TextColumn::make('created_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-                TextColumn::make('updated_at')
-                    ->dateTime()
+                    ->dateTime('M d, Y')
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
